@@ -1,8 +1,8 @@
 [ {
-  "pageName" : "业务模块列表",
+  "pageName" : "审批流程列表",
   "pageType" : "list",
-  "path" : "/module/list",
-  "component" : "modules/module/List",
+  "path" : "/approval/list",
+  "component" : "modules/approval/List",
   "fields" : [ {
     "fieldName" : "biz_no",
     "label" : "业务编号",
@@ -25,27 +25,6 @@
     "placeholder" : "请输入负责人",
     "options" : null
   }, {
-    "fieldName" : "contact_phone",
-    "label" : "联系电话",
-    "type" : "input",
-    "required" : false,
-    "placeholder" : "请输入联系电话",
-    "options" : null
-  }, {
-    "fieldName" : "biz_date",
-    "label" : "业务日期",
-    "type" : "date",
-    "required" : false,
-    "placeholder" : "请输入业务日期",
-    "options" : null
-  }, {
-    "fieldName" : "biz_time",
-    "label" : "业务时间",
-    "type" : "datetime",
-    "required" : false,
-    "placeholder" : "请输入业务时间",
-    "options" : null
-  }, {
     "fieldName" : "status",
     "label" : "状态",
     "type" : "select",
@@ -61,10 +40,10 @@
     "options" : null
   } ]
 }, {
-  "pageName" : "业务模块新增",
+  "pageName" : "审批流程新增",
   "pageType" : "add",
-  "path" : "/module/add",
-  "component" : "modules/module/Form",
+  "path" : "/approval/add",
+  "component" : "modules/approval/Form",
   "fields" : [ {
     "fieldName" : "biz_no",
     "label" : "业务编号",
@@ -87,27 +66,6 @@
     "placeholder" : "请输入负责人",
     "options" : null
   }, {
-    "fieldName" : "contact_phone",
-    "label" : "联系电话",
-    "type" : "input",
-    "required" : false,
-    "placeholder" : "请输入联系电话",
-    "options" : null
-  }, {
-    "fieldName" : "biz_date",
-    "label" : "业务日期",
-    "type" : "date",
-    "required" : false,
-    "placeholder" : "请输入业务日期",
-    "options" : null
-  }, {
-    "fieldName" : "biz_time",
-    "label" : "业务时间",
-    "type" : "datetime",
-    "required" : false,
-    "placeholder" : "请输入业务时间",
-    "options" : null
-  }, {
     "fieldName" : "status",
     "label" : "状态",
     "type" : "select",
@@ -123,10 +81,10 @@
     "options" : null
   } ]
 }, {
-  "pageName" : "业务模块编辑",
+  "pageName" : "审批流程编辑",
   "pageType" : "edit",
-  "path" : "/module/edit/:id",
-  "component" : "modules/module/Form",
+  "path" : "/approval/edit/:id",
+  "component" : "modules/approval/Form",
   "fields" : [ {
     "fieldName" : "biz_no",
     "label" : "业务编号",
@@ -147,27 +105,6 @@
     "type" : "input",
     "required" : false,
     "placeholder" : "请输入负责人",
-    "options" : null
-  }, {
-    "fieldName" : "contact_phone",
-    "label" : "联系电话",
-    "type" : "input",
-    "required" : false,
-    "placeholder" : "请输入联系电话",
-    "options" : null
-  }, {
-    "fieldName" : "biz_date",
-    "label" : "业务日期",
-    "type" : "date",
-    "required" : false,
-    "placeholder" : "请输入业务日期",
-    "options" : null
-  }, {
-    "fieldName" : "biz_time",
-    "label" : "业务时间",
-    "type" : "datetime",
-    "required" : false,
-    "placeholder" : "请输入业务时间",
     "options" : null
   }, {
     "fieldName" : "status",
@@ -185,10 +122,10 @@
     "options" : null
   } ]
 }, {
-  "pageName" : "业务模块详情",
+  "pageName" : "审批流程详情",
   "pageType" : "detail",
-  "path" : "/module/detail/:id",
-  "component" : "modules/module/Detail",
+  "path" : "/approval/detail/:id",
+  "component" : "modules/approval/Detail",
   "fields" : [ {
     "fieldName" : "biz_no",
     "label" : "业务编号",
@@ -209,27 +146,6 @@
     "type" : "input",
     "required" : false,
     "placeholder" : "请输入负责人",
-    "options" : null
-  }, {
-    "fieldName" : "contact_phone",
-    "label" : "联系电话",
-    "type" : "input",
-    "required" : false,
-    "placeholder" : "请输入联系电话",
-    "options" : null
-  }, {
-    "fieldName" : "biz_date",
-    "label" : "业务日期",
-    "type" : "date",
-    "required" : false,
-    "placeholder" : "请输入业务日期",
-    "options" : null
-  }, {
-    "fieldName" : "biz_time",
-    "label" : "业务时间",
-    "type" : "datetime",
-    "required" : false,
-    "placeholder" : "请输入业务时间",
     "options" : null
   }, {
     "fieldName" : "status",

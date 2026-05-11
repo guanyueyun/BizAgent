@@ -1,0 +1,17 @@
+[ {
+  "permissionCode" : "approval:list",
+  "permissionName" : "审批流程查看",
+  "moduleName" : "审批流程"
+}, {
+  "permissionCode" : "approval:add",
+  "permissionName" : "审批流程新增",
+  "moduleName" : "审批流程"
+}, {
+  "permissionCode" : "approval:edit",
+  "permissionName" : "审批流程编辑",
+  "moduleName" : "审批流程"
+}, {
+  "permissionCode" : "approval:delete",
+  "permissionName" : "审批流程删除",
+  "moduleName" : "审批流程"
+} ]

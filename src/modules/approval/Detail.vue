@@ -1,12 +1,9 @@
 <template>
   <div class="generated-module">
-    <el-descriptions title="业务模块详情" :column="2" border>
+    <el-descriptions title="审批流程详情" :column="2" border>
       <el-descriptions-item label="业务编号">{{ form.biz_no || '-' }}</el-descriptions-item>
       <el-descriptions-item label="名称">{{ form.name || '-' }}</el-descriptions-item>
       <el-descriptions-item label="负责人">{{ form.owner_name || '-' }}</el-descriptions-item>
-      <el-descriptions-item label="联系电话">{{ form.contact_phone || '-' }}</el-descriptions-item>
-      <el-descriptions-item label="业务日期">{{ form.biz_date || '-' }}</el-descriptions-item>
-      <el-descriptions-item label="业务时间">{{ form.biz_time || '-' }}</el-descriptions-item>
       <el-descriptions-item label="状态">{{ form.status || '-' }}</el-descriptions-item>
       <el-descriptions-item label="备注">{{ form.remark || '-' }}</el-descriptions-item>
     </el-descriptions>
@@ -21,7 +18,7 @@
 import { reactive, onMounted } from 'vue'
 import * as api from './api'
 
-defineOptions({ name: 'ModuleDetail' })
+defineOptions({ name: 'ApprovalDetail' })
 
 const props = defineProps({ id: [Number, String] })
 const emit = defineEmits(['back', 'edit'])

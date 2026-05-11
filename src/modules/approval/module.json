@@ -1,11 +1,11 @@
 {
-  "moduleName" : "业务模块",
-  "moduleCode" : "module",
-  "description" : "业务目标：实现停车场内车辆信息的统一管理，支持车辆入场、出场、信息维护及查询。\n\n核心对象：车辆\n\n页面：\n- 车辆列表页：展示所有在场车辆和已出场车辆记录，支持按车牌号、入场时间等条件筛选。\n- 车辆详情页：查看单一车辆的完整信息。\n- 新增车辆页：用于车辆入场登记。\n\n字段：\n- 车牌号（必填，文本）\n- 车辆类型（下拉选择：小型车、大型车、新能源车等）\n- 入场时间（必填，日期时间）\n- 出场时间（日期时间，可为空）\n- 停车位编号（文本，可选）\n- 车主姓名（文本，可选）\n- 联系电话（文本，可选）\n- 车辆状态（下拉选择：在场、已出场）\n\n流程：\n- 入场流程：用户通过新增车辆页录入车牌号、车辆类型、入场时间等信息，保存后生成一条在场车辆记录。\n- 出场流程：用户在车辆列表页选择在场车辆，点击出场操作，系统自动记录出场时间并变更车辆状态为已出场。\n\n权限：\n- 管理员：可查看、新增、编辑、删除所有车辆记录。\n- 普通用户：仅可查看和新增车辆记录，不可编辑或删除。\n\n统计：无\n\n审批：无\n\n导入导出：无\n\n移动端：无\n\n待确认：车辆类型的具体分类列表；停车位编号是否需要与停车场车位表关联；是否支持无牌车辆入场。",
+  "moduleName" : "审批流程",
+  "moduleCode" : "approval",
+  "description" : "业务目标：在当前 BizAgent 平台内生成「业务模块」业务模块，不生成独立系统。\n原始需求：班组管理\n核心功能：列表查询、新增、编辑、详情、删除，并接入平台菜单、权限、用户和项目体系。\n数据规范：生成业务表结构，包含 id、create_by、create_time、update_by、update_time、del_flag、project_id 等通用字段。\n权限规范：生成查看、新增、编辑、删除等权限点，权限编码采用 模块:操作 格式。\n待确认：是否需要审批流程及审批节点。\n待确认：是否需要 Excel 导入导出。\n待确认：是否需要统计看板和统计维度。\n待确认：核心字段、字段类型、必填规则、枚举值、角色权限范围。",
   "projectId" : 1,
   "tables" : [ {
-    "tableName" : "biz_module_main",
-    "tableComment" : "module主表",
+    "tableName" : "biz_approval_main",
+    "tableComment" : "approval主表",
     "columns" : [ {
       "columnName" : "id",
       "dataType" : "BIGINT",
@@ -39,30 +39,6 @@
       "primaryKey" : false,
       "autoIncrement" : false
     }, {
-      "columnName" : "contact_phone",
-      "dataType" : "VARCHAR(30)",
-      "comment" : "联系电话",
-      "nullable" : true,
-      "defaultValue" : null,
-      "primaryKey" : false,
-      "autoIncrement" : false
-    }, {
-      "columnName" : "biz_date",
-      "dataType" : "DATE",
-      "comment" : "业务日期",
-      "nullable" : true,
-      "defaultValue" : null,
-      "primaryKey" : false,
-      "autoIncrement" : false
-    }, {
-      "columnName" : "biz_time",
-      "dataType" : "DATETIME",
-      "comment" : "业务时间",
-      "nullable" : true,
-      "defaultValue" : null,
-      "primaryKey" : false,
-      "autoIncrement" : false
-    }, {
       "columnName" : "status",
       "dataType" : "VARCHAR(30)",
       "comment" : "状态",
@@ -79,12 +55,72 @@
       "primaryKey" : false,
       "autoIncrement" : false
     } ]
+  }, {
+    "tableName" : "biz_approval_approval",
+    "tableComment" : "审批记录",
+    "columns" : [ {
+      "columnName" : "id",
+      "dataType" : "BIGINT",
+      "comment" : "主键",
+      "nullable" : false,
+      "defaultValue" : null,
+      "primaryKey" : true,
+      "autoIncrement" : true
+    }, {
+      "columnName" : "biz_id",
+      "dataType" : "BIGINT",
+      "comment" : "业务数据ID",
+      "nullable" : false,
+      "defaultValue" : null,
+      "primaryKey" : false,
+      "autoIncrement" : false
+    }, {
+      "columnName" : "node_name",
+      "dataType" : "VARCHAR(100)",
+      "comment" : "审批节点",
+      "nullable" : false,
+      "defaultValue" : null,
+      "primaryKey" : false,
+      "autoIncrement" : false
+    }, {
+      "columnName" : "approver",
+      "dataType" : "VARCHAR(100)",
+      "comment" : "审批人",
+      "nullable" : true,
+      "defaultValue" : null,
+      "primaryKey" : false,
+      "autoIncrement" : false
+    }, {
+      "columnName" : "approval_status",
+      "dataType" : "VARCHAR(30)",
+      "comment" : "审批状态",
+      "nullable" : false,
+      "defaultValue" : "'pending'",
+      "primaryKey" : false,
+      "autoIncrement" : false
+    }, {
+      "columnName" : "approval_comment",
+      "dataType" : "VARCHAR(500)",
+      "comment" : "审批意见",
+      "nullable" : true,
+      "defaultValue" : null,
+      "primaryKey" : false,
+      "autoIncrement" : false
+    }, {
+      "columnName" : "approval_time",
+      "dataType" : "DATETIME",
+      "comment" : "审批时间",
+      "nullable" : true,
+      "defaultValue" : null,
+      "primaryKey" : false,
+      "autoIncrement" : false
+    } ]
   } ],
   "pages" : [ {
-    "pageName" : "业务模块列表",
+    "pageName" : "审批流程列表",
     "pageType" : "list",
-    "path" : "/module/list",
-    "component" : "modules/module/List",
+    "path" : "/approval/list",
+    "component" : "modules/approval/List",
     "fields" : [ {
       "fieldName" : "biz_no",
       "label" : "业务编号",
@@ -107,27 +143,6 @@
       "placeholder" : "请输入负责人",
       "options" : null
     }, {
-      "fieldName" : "contact_phone",
-      "label" : "联系电话",
-      "type" : "input",
-      "required" : false,
-      "placeholder" : "请输入联系电话",
-      "options" : null
-    }, {
-      "fieldName" : "biz_date",
-      "label" : "业务日期",
-      "type" : "date",
-      "required" : false,
-      "placeholder" : "请输入业务日期",
-      "options" : null
-    }, {
-      "fieldName" : "biz_time",
-      "label" : "业务时间",
-      "type" : "datetime",
-      "required" : false,
-      "placeholder" : "请输入业务时间",
-      "options" : null
-    }, {
       "fieldName" : "status",
       "label" : "状态",
       "type" : "select",
@@ -143,10 +158,10 @@
       "options" : null
     } ]
   }, {
-    "pageName" : "业务模块新增",
+    "pageName" : "审批流程新增",
     "pageType" : "add",
-    "path" : "/module/add",
-    "component" : "modules/module/Form",
+    "path" : "/approval/add",
+    "component" : "modules/approval/Form",
     "fields" : [ {
       "fieldName" : "biz_no",
       "label" : "业务编号",
@@ -169,27 +184,6 @@
       "placeholder" : "请输入负责人",
       "options" : null
     }, {
-      "fieldName" : "contact_phone",
-      "label" : "联系电话",
-      "type" : "input",
-      "required" : false,
-      "placeholder" : "请输入联系电话",
-      "options" : null
-    }, {
-      "fieldName" : "biz_date",
-      "label" : "业务日期",
-      "type" : "date",
-      "required" : false,
-      "placeholder" : "请输入业务日期",
-      "options" : null
-    }, {
-      "fieldName" : "biz_time",
-      "label" : "业务时间",
-      "type" : "datetime",
-      "required" : false,
-      "placeholder" : "请输入业务时间",
-      "options" : null
-    }, {
       "fieldName" : "status",
       "label" : "状态",
       "type" : "select",
@@ -205,10 +199,10 @@
       "options" : null
     } ]
   }, {
-    "pageName" : "业务模块编辑",
+    "pageName" : "审批流程编辑",
     "pageType" : "edit",
-    "path" : "/module/edit/:id",
-    "component" : "modules/module/Form",
+    "path" : "/approval/edit/:id",
+    "component" : "modules/approval/Form",
     "fields" : [ {
       "fieldName" : "biz_no",
       "label" : "业务编号",
@@ -229,27 +223,6 @@
       "type" : "input",
       "required" : false,
       "placeholder" : "请输入负责人",
-      "options" : null
-    }, {
-      "fieldName" : "contact_phone",
-      "label" : "联系电话",
-      "type" : "input",
-      "required" : false,
-      "placeholder" : "请输入联系电话",
-      "options" : null
-    }, {
-      "fieldName" : "biz_date",
-      "label" : "业务日期",
-      "type" : "date",
-      "required" : false,
-      "placeholder" : "请输入业务日期",
-      "options" : null
-    }, {
-      "fieldName" : "biz_time",
-      "label" : "业务时间",
-      "type" : "datetime",
-      "required" : false,
-      "placeholder" : "请输入业务时间",
       "options" : null
     }, {
       "fieldName" : "status",
@@ -267,10 +240,10 @@
       "options" : null
     } ]
   }, {
-    "pageName" : "业务模块详情",
+    "pageName" : "审批流程详情",
     "pageType" : "detail",
-    "path" : "/module/detail/:id",
-    "component" : "modules/module/Detail",
+    "path" : "/approval/detail/:id",
+    "component" : "modules/approval/Detail",
     "fields" : [ {
       "fieldName" : "biz_no",
       "label" : "业务编号",
@@ -291,27 +264,6 @@
       "type" : "input",
       "required" : false,
       "placeholder" : "请输入负责人",
-      "options" : null
-    }, {
-      "fieldName" : "contact_phone",
-      "label" : "联系电话",
-      "type" : "input",
-      "required" : false,
-      "placeholder" : "请输入联系电话",
-      "options" : null
-    }, {
-      "fieldName" : "biz_date",
-      "label" : "业务日期",
-      "type" : "date",
-      "required" : false,
-      "placeholder" : "请输入业务日期",
-      "options" : null
-    }, {
-      "fieldName" : "biz_time",
-      "label" : "业务时间",
-      "type" : "datetime",
-      "required" : false,
-      "placeholder" : "请输入业务时间",
       "options" : null
     }, {
       "fieldName" : "status",
@@ -332,49 +284,49 @@
   "apis" : [ {
     "apiName" : "分页查询",
     "method" : "GET",
-    "path" : "/api/biz/module/list",
+    "path" : "/api/biz/approval/list",
     "description" : "分页查询接口"
   }, {
     "apiName" : "新增",
     "method" : "POST",
-    "path" : "/api/biz/module",
+    "path" : "/api/biz/approval",
     "description" : "新增接口"
   }, {
     "apiName" : "修改",
     "method" : "PUT",
-    "path" : "/api/biz/module/{id}",
+    "path" : "/api/biz/approval/{id}",
     "description" : "修改接口"
   }, {
     "apiName" : "删除",
     "method" : "DELETE",
-    "path" : "/api/biz/module/{id}",
+    "path" : "/api/biz/approval/{id}",
     "description" : "删除接口"
   }, {
     "apiName" : "详情",
     "method" : "GET",
-    "path" : "/api/biz/module/{id}",
+    "path" : "/api/biz/approval/{id}",
     "description" : "详情接口"
   } ],
   "permissions" : [ {
-    "permissionCode" : "module:list",
-    "permissionName" : "业务模块查看",
-    "moduleName" : "业务模块"
+    "permissionCode" : "approval:list",
+    "permissionName" : "审批流程查看",
+    "moduleName" : "审批流程"
   }, {
-    "permissionCode" : "module:add",
-    "permissionName" : "业务模块新增",
-    "moduleName" : "业务模块"
+    "permissionCode" : "approval:add",
+    "permissionName" : "审批流程新增",
+    "moduleName" : "审批流程"
   }, {
-    "permissionCode" : "module:edit",
-    "permissionName" : "业务模块编辑",
-    "moduleName" : "业务模块"
+    "permissionCode" : "approval:edit",
+    "permissionName" : "审批流程编辑",
+    "moduleName" : "审批流程"
   }, {
-    "permissionCode" : "module:delete",
-    "permissionName" : "业务模块删除",
-    "moduleName" : "业务模块"
+    "permissionCode" : "approval:delete",
+    "permissionName" : "审批流程删除",
+    "moduleName" : "审批流程"
   } ],
   "menus" : [ {
-    "menuName" : "业务模块",
-    "path" : "/module-runtime/module",
+    "menuName" : "审批流程",
+    "path" : "/module-runtime/approval",
     "component" : "ModuleRuntime",
     "parentId" : 0,
     "icon" : "component",

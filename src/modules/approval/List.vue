@@ -1,16 +1,15 @@
 <template>
   <div class="generated-module">
     <div class="module-toolbar">
-      <h2>业务模块</h2>
+      <h2>审批流程</h2>
       <el-button type="primary" @click="handleAdd">新增</el-button>
     </div>
     <el-table :data="tableData" border @row-click="handleView">
       <el-table-column prop="biz_no" label="业务编号" />
       <el-table-column prop="name" label="名称" />
       <el-table-column prop="owner_name" label="负责人" />
-      <el-table-column prop="contact_phone" label="联系电话" />
-      <el-table-column prop="biz_date" label="业务日期" />
-      <el-table-column prop="biz_time" label="业务时间" />
+      <el-table-column prop="status" label="状态" />
+      <el-table-column prop="remark" label="备注" />
       <el-table-column prop="id" label="ID" width="80" />
       <el-table-column label="操作" width="180">
         <template #default="scope">
@@ -29,7 +28,7 @@
 import { ref, onMounted } from 'vue'
 import * as api from './api'
 
-defineOptions({ name: 'ModuleList' })
+defineOptions({ name: 'ApprovalList' })
 
 const tableData = ref([])
 const pageNum = ref(1)

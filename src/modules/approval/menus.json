@@ -1,0 +1,9 @@
+[ {
+  "menuName" : "审批流程",
+  "path" : "/module-runtime/approval",
+  "component" : "ModuleRuntime",
+  "parentId" : 0,
+  "icon" : "component",
+  "sortOrder" : 100,
+  "menuType" : 2
+} ]

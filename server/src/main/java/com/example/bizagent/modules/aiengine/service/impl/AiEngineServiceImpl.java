@@ -137,12 +137,24 @@ public class AiEngineServiceImpl implements AiEngineService {
 
     private String requirementOptimizePrompt() {
         return """
-                你是企业低代码平台的需求优化助手。
-                请在不改变用户原意的前提下，把自然语言需求优化成更适合生成业务模块的描述。
+                你是 BizAgent 企业低代码平台的需求分析师，目标是把用户口语化需求整理成可直接生成业务功能模块的需求说明。
                 必须只输出优化后的中文需求文本，不要 Markdown，不要代码块，不要解释。
-                优化内容应包含：业务目标、核心对象、页面、字段、流程、权限、统计、审批、导入导出、移动端等。
-                只能描述当前平台内业务功能模块，禁止要求生成完整系统、登录系统、权限系统或外部项目。
-                如果原需求缺少信息，用“待确认：...”列出，不能凭空确定。
+
+                优化目标：
+                1. 不改变用户原意，不凭空增加外部系统、登录体系、权限体系、消息中间件、工作流引擎等平台外能力。
+                2. 把需求整理为“业务目标、业务对象、核心流程、字段规则、页面、接口、权限、统计、审批、导入导出、消息提醒、移动端适配、数据范围”。
+                3. 用户没有说明的信息，用“待确认：...”列出；用户已经勾选的能力必须写入需求。
+                4. 保持业务语言清晰具体，避免抽象词，例如“完善管理能力”“提升效率”必须落到对象、字段、动作和状态。
+
+                推荐输出结构：
+                业务目标：...
+                业务对象：...
+                核心流程：...
+                字段规则：字段名、类型、是否必填、枚举值、默认值。
+                页面要求：列表、新增、编辑、详情，按需包含审批、统计、导入导出、移动端。
+                接口要求：查询、新增、修改、删除、详情，按需包含提交、审批、导入、导出、统计、提醒。
+                权限要求：模块:list/add/edit/delete，按需包含 approve/import/export/statistics/notify。
+                待确认：...
                 """;
     }
 
@@ -192,21 +204,83 @@ public class AiEngineServiceImpl implements AiEngineService {
 
     private String systemPrompt() {
         return """
-                你是企业低代码平台业务模块生成引擎。
-                你只能生成当前平台内部业务功能模块，禁止生成完整系统、登录系统、权限系统、基础架构或外部项目。
+                你是 BizAgent 企业低代码平台的业务模块设计生成引擎。
+                你的任务是根据用户需求生成一个可被平台发布运行的 ModuleDesign JSON。
                 输出必须是严格 JSON，不要 Markdown，不要解释。
-                JSON 字段必须符合 ModuleDesign：moduleName, moduleCode, description, tables, pages, apis, permissions, menus。
-                表名必须使用 biz_{moduleCode}_ 前缀，主业务表必须是 biz_{moduleCode}_main。
-                权限编码必须符合 模块:操作，例如 inspection:list。
-                所有业务表必须能补充 id/create_by/create_time/update_by/update_time/del_flag/project_id 通用字段。
-                字段名、表名、moduleCode 只能使用小写英文、数字和下划线，moduleCode 必须以英文字母开头。
-                必须至少包含 list/add/edit/detail 四类页面，以及 list/add/edit/delete 四类权限。
-                如果需求包含审批、导入导出、统计、消息提醒，必须在 apis 和 permissions 中同步体现。
+
+                一、绝对边界
+                1. 只能生成当前平台内部业务功能模块。
+                2. 禁止生成完整系统、登录系统、权限系统、用户中心、组织架构、网关、微服务、独立前端项目、独立后端项目、外部 SaaS。
+                3. 禁止要求改造平台基础架构；模块必须挂载到当前 BizAgent 平台。
+
+                二、JSON 契约
+                顶层字段必须完整包含：
+                moduleName, moduleCode, description, tables, pages, apis, permissions, menus。
+                不要输出 null；数组不能为空；不要输出多余解释文本。
+
+                三、命名规范
+                1. moduleCode 使用小写英文、数字、下划线，必须以英文字母开头，长度 2-40。
+                2. 表名必须使用 biz_{moduleCode}_ 前缀，主表必须是 biz_{moduleCode}_main。
+                3. 字段名使用 snake_case 小写英文，不使用中文、拼音首字母混写、空格、连字符。
+                4. 权限编码必须为 {moduleCode}:{action}，例如 inspection:list。
+
+                四、表结构规范
+                1. 每个模块必须至少有一张主业务表 biz_{moduleCode}_main。
+                2. 每张表 columns 中必须包含 id 字段，类型 BIGINT，primaryKey=true，autoIncrement=true。
+                3. 不要在 columns 中生成 create_by/create_time/update_by/update_time/del_flag/project_id，平台会统一补充。
+                4. 字段类型只能使用 BIGINT、INT、DECIMAL(18,2)、VARCHAR(n)、TEXT、DATE、DATETIME。
+                5. 业务字段必须具体，例如 device_name、inspection_time、exception_desc，不要只给 name、remark 两个泛字段。
+                6. 状态字段建议使用 status，defaultValue 使用带单引号的枚举值，例如 'draft'。
+
+                五、页面规范
+                必须至少包含四个页面：
+                list: /{moduleCode}/list
+                add: /{moduleCode}/add
+                edit: /{moduleCode}/edit/:id
+                detail: /{moduleCode}/detail/:id
+                每个 page 必须包含 fields，fields 来自主业务表业务字段。
+                field.type 只能使用 input、textarea、select、date、datetime、number。
+                select 字段必须提供 options，格式为 value:label,value:label。
+
+                六、API 规范
+                必须至少包含：
+                GET /api/biz/{moduleCode}/list
+                GET /api/biz/{moduleCode}/{id}
+                POST /api/biz/{moduleCode}
+                PUT /api/biz/{moduleCode}/{id}
+                DELETE /api/biz/{moduleCode}/{id}
+                如果需求包含导入导出，增加 /import、/export。
+                如果需求包含统计，增加 /statistics。
+                如果需求包含审批，增加 /{id}/submit、/{id}/approve。
+                如果需求包含消息提醒，增加 /{id}/notify、/notifications。
+
+                七、权限和菜单规范
+                必须至少包含 list、add、edit、delete 权限。
+                按需包含 import、export、statistics、approve、notify。
+                菜单必须包含一个主菜单：path=/module-runtime/{moduleCode}, component=ModuleRuntime, parentId=0, menuType=2。
+
+                八、常见业务场景参考
+                设备巡检：设备、位置、计划、巡检人、巡检时间、异常、状态。
+                工单管理：工单号、标题、类型、优先级、处理人、截止时间、处理结果、状态。
+                合同管理：合同编号、客户、金额、签订日期、生效日期、到期日期、负责人、状态。
+                库存管理：物料编码、物料名称、仓库、数量、单位、供应商、入库时间、状态。
+                客户管理：客户名称、联系人、电话、行业、来源、跟进人、跟进状态。
+                请假管理：员工、假期类型、开始时间、结束时间、天数、原因、审批状态。
+
+                九、质量要求
+                1. 需求越简单，也要生成完整可运行模块设计。
+                2. 不要遗漏 pages/apis/permissions/menus 的联动。
+                3. 不要输出 Markdown 代码块。
                 """;
     }
 
     private String userPrompt(RequirementRequest request) throws Exception {
-        return "请根据以下需求生成平台业务模块设计 JSON：\n" + objectMapper.writeValueAsString(request);
+        return """
+                请根据以下 RequirementRequest 生成平台业务模块设计 JSON。
+                needApproval/needMobile/needImportExport/needStatistics/needNotification 为 true 时，必须在 tables、pages、apis、permissions 中体现对应能力。
+                输出必须能被 Java ObjectMapper 直接解析为 ModuleDesign。
+                RequirementRequest JSON：
+                """ + objectMapper.writeValueAsString(request);
     }
 
     private String extractJsonObject(String content) {
@@ -303,138 +377,6 @@ public class AiEngineServiceImpl implements AiEngineService {
         return questions.stream().limit(5).toList();
     }
 
-    private String extractModuleCode(String requirement) {
-        if (requirement.contains("设备巡检")) return "inspection";
-        if (requirement.contains("仓储") || requirement.toUpperCase(Locale.ROOT).contains("WMS")) return "wms";
-        if (requirement.contains("安全") || requirement.contains("质量")) return "quality";
-        if (requirement.contains("合同")) return "contract";
-        if (requirement.contains("物资")) return "material";
-        if (requirement.contains("请假")) return "leave";
-        if (requirement.contains("人员") || requirement.contains("员工")) return "personnel";
-        if (requirement.contains("审批流程") || requirement.contains("审批管理")) return "approval";
-        return "mod_" + Integer.toUnsignedString(requirement.hashCode(), 36);
-    }
-
-    private String extractModuleName(String requirement) {
-        if (requirement.contains("设备巡检")) return "设备巡检";
-        if (requirement.contains("仓储") || requirement.toUpperCase(Locale.ROOT).contains("WMS")) return "仓储管理";
-        if (requirement.contains("安全") || requirement.contains("质量")) return "安全质量";
-        if (requirement.contains("合同")) return "合同管理";
-        if (requirement.contains("物资")) return "物资管理";
-        if (requirement.contains("请假")) return "请假管理";
-        if (requirement.contains("人员") || requirement.contains("员工")) return "人员管理";
-        if (requirement.contains("审批流程") || requirement.contains("审批管理")) return "审批流程";
-        return "业务模块";
-    }
-
-    private List<TableSchema> generateTables(String moduleCode, RequirementRequest request) {
-        List<TableSchema> tables = new ArrayList<>();
-        tables.add(mainBusinessTable(moduleCode, Objects.toString(request.getRequirement(), "")));
-
-        if (Boolean.TRUE.equals(request.getNeedApproval()) || moduleCode.equals("approval") || moduleCode.equals("leave")) {
-            tables.add(table("biz_" + moduleCode + "_approval", "审批记录",
-                    column("biz_id", "BIGINT", "业务数据ID", false, null),
-                    column("node_name", "VARCHAR(100)", "审批节点", false, null),
-                    column("approver", "VARCHAR(100)", "审批人", true, null),
-                    column("approval_status", "VARCHAR(30)", "审批状态", false, "'pending'"),
-                    column("approval_comment", "VARCHAR(500)", "审批意见", true, null),
-                    column("approval_time", "DATETIME", "审批时间", true, null)));
-        }
-
-        if (Boolean.TRUE.equals(request.getNeedStatistics())) {
-            tables.add(table("biz_" + moduleCode + "_stat_day", "日统计",
-                    column("stat_date", "DATE", "统计日期", false, null),
-                    column("total_count", "INT", "总数量", false, "0"),
-                    column("done_count", "INT", "完成数量", false, "0"),
-                    column("exception_count", "INT", "异常数量", false, "0")));
-        }
-        if (Boolean.TRUE.equals(request.getNeedNotification())) {
-            tables.add(table("biz_" + moduleCode + "_notification", "消息提醒",
-                    column("biz_id", "BIGINT", "业务数据ID", false, null),
-                    column("receiver", "VARCHAR(100)", "接收人", true, null),
-                    column("message_title", "VARCHAR(200)", "消息标题", false, null),
-                    column("message_content", "VARCHAR(500)", "消息内容", true, null),
-                    column("read_status", "VARCHAR(30)", "阅读状态", false, "'unread'")));
-        }
-
-        return tables;
-    }
-
-    private TableSchema mainBusinessTable(String moduleCode, String requirement) {
-        if (moduleCode.equals("inspection")) {
-            return table("biz_inspection_main", "设备巡检主表",
-                    column("inspection_no", "VARCHAR(50)", "巡检单号", false, null),
-                    column("device_name", "VARCHAR(100)", "设备名称", false, null),
-                    column("device_code", "VARCHAR(50)", "设备编码", true, null),
-                    column("location", "VARCHAR(100)", "位置", true, null),
-                    column("inspection_plan", "VARCHAR(200)", "巡检计划", true, null),
-                    column("inspector", "VARCHAR(100)", "巡检人", true, null),
-                    column("inspection_time", "DATETIME", "巡检时间", true, null),
-                    column("exception_desc", "VARCHAR(500)", "异常说明", true, null),
-                    column("status", "VARCHAR(30)", "状态", false, "'draft'"));
-        }
-        if (moduleCode.equals("wms")) {
-            return table("biz_wms_main", "仓储管理主表",
-                    column("warehouse_name", "VARCHAR(100)", "仓库名称", false, null),
-                    column("material_code", "VARCHAR(50)", "物料编码", false, null),
-                    column("material_name", "VARCHAR(100)", "物料名称", false, null),
-                    column("supplier_name", "VARCHAR(100)", "供应商", true, null),
-                    column("quantity", "DECIMAL(18,2)", "数量", false, "0"),
-                    column("inbound_time", "DATETIME", "入库时间", true, null),
-                    column("status", "VARCHAR(30)", "状态", false, "'normal'"));
-        }
-        if (moduleCode.equals("leave")) {
-            return table("biz_leave_main", "请假管理主表",
-                    column("employee_name", "VARCHAR(100)", "员工姓名", false, null),
-                    column("leave_type", "VARCHAR(50)", "请假类型", false, null),
-                    column("start_time", "DATETIME", "开始时间", false, null),
-                    column("end_time", "DATETIME", "结束时间", false, null),
-                    column("reason", "VARCHAR(500)", "请假原因", true, null),
-                    column("status", "VARCHAR(30)", "状态", false, "'draft'"));
-        }
-        List<ColumnSchema> columns = new ArrayList<>();
-        columns.add(column("biz_no", "VARCHAR(50)", "业务编号", false, null));
-        columns.add(column("name", "VARCHAR(100)", "名称", false, null));
-        columns.add(column("owner_name", "VARCHAR(100)", "负责人", true, null));
-        columns.addAll(extractCustomColumns(requirement));
-        columns.add(column("status", "VARCHAR(30)", "状态", false, "'draft'"));
-        columns.add(column("remark", "VARCHAR(500)", "备注", true, null));
-        return table("biz_" + moduleCode + "_main", moduleCode + "主表", columns.toArray(new ColumnSchema[0]));
-    }
-
-    private List<ColumnSchema> extractCustomColumns(String requirement) {
-        List<ColumnSchema> columns = new ArrayList<>();
-        addColumnIfMentioned(columns, requirement, "客户", "customer_name", "客户名称", "VARCHAR(100)");
-        addColumnIfMentioned(columns, requirement, "联系人", "contact_name", "联系人", "VARCHAR(100)");
-        addColumnIfMentioned(columns, requirement, "电话", "contact_phone", "联系电话", "VARCHAR(30)");
-        addColumnIfMentioned(columns, requirement, "金额", "amount", "金额", "DECIMAL(18,2)");
-        addColumnIfMentioned(columns, requirement, "日期", "biz_date", "业务日期", "DATE");
-        addColumnIfMentioned(columns, requirement, "时间", "biz_time", "业务时间", "DATETIME");
-        addColumnIfMentioned(columns, requirement, "附件", "attachment_url", "附件地址", "VARCHAR(500)");
-        addColumnIfMentioned(columns, requirement, "地址", "address", "地址", "VARCHAR(255)");
-        return columns;
-    }
-
-    private void addColumnIfMentioned(List<ColumnSchema> columns, String requirement, String keyword, String name, String comment, String type) {
-        if (requirement.contains(keyword) && columns.stream().noneMatch(column -> column.getColumnName().equals(name))) {
-            columns.add(column(name, type, comment, true, null));
-        }
-    }
-
-    private TableSchema table(String tableName, String tableComment, ColumnSchema... columns) {
-        TableSchema table = new TableSchema();
-        table.setTableName(tableName);
-        table.setTableComment(tableComment);
-        List<ColumnSchema> allColumns = new ArrayList<>();
-        ColumnSchema id = column("id", "BIGINT", "主键", false, null);
-        id.setPrimaryKey(true);
-        id.setAutoIncrement(true);
-        allColumns.add(id);
-        allColumns.addAll(List.of(columns));
-        table.setColumns(allColumns);
-        return table;
-    }
-
     private ColumnSchema column(String name, String type, String comment, boolean nullable, String defaultValue) {
         ColumnSchema column = new ColumnSchema();
         column.setColumnName(name);
@@ -445,144 +387,6 @@ public class AiEngineServiceImpl implements AiEngineService {
         column.setPrimaryKey(false);
         column.setAutoIncrement(false);
         return column;
-    }
-
-    private List<PageSchema> generatePages(String moduleCode, String moduleName, RequirementRequest request, List<TableSchema> tables) {
-        List<PageSchema> pages = new ArrayList<>();
-        List<FieldSchema> fields = generateFields(tables.get(0));
-        pages.add(page(moduleName + "列表", "list", "/" + moduleCode + "/list", "modules/" + moduleCode + "/List", fields));
-        pages.add(page(moduleName + "新增", "add", "/" + moduleCode + "/add", "modules/" + moduleCode + "/Form", fields));
-        pages.add(page(moduleName + "编辑", "edit", "/" + moduleCode + "/edit/:id", "modules/" + moduleCode + "/Form", fields));
-        pages.add(page(moduleName + "详情", "detail", "/" + moduleCode + "/detail/:id", "modules/" + moduleCode + "/Detail", fields));
-        if (Boolean.TRUE.equals(request.getNeedStatistics())) {
-            pages.add(page(moduleName + "统计", "statistics", "/" + moduleCode + "/statistics", "modules/" + moduleCode + "/Statistics", fields));
-        }
-        if (Boolean.TRUE.equals(request.getNeedApproval())) {
-            pages.add(page(moduleName + "审批", "approval", "/" + moduleCode + "/approval", "modules/" + moduleCode + "/Approval", fields));
-        }
-        if (Boolean.TRUE.equals(request.getNeedMobile())) {
-            pages.add(page(moduleName + "移动端", "mobile", "/" + moduleCode + "/mobile", "modules/" + moduleCode + "/Mobile", fields));
-        }
-        return pages;
-    }
-
-    private PageSchema page(String name, String type, String path, String component, List<FieldSchema> fields) {
-        PageSchema page = new PageSchema();
-        page.setPageName(name);
-        page.setPageType(type);
-        page.setPath(path);
-        page.setComponent(component);
-        page.setFields(fields);
-        return page;
-    }
-
-    private List<FieldSchema> generateFields(TableSchema table) {
-        return table.getColumns().stream()
-                .filter(column -> !Boolean.TRUE.equals(column.getPrimaryKey()))
-                .map(this::fieldFromColumn)
-                .toList();
-    }
-
-    private FieldSchema fieldFromColumn(ColumnSchema column) {
-        FieldSchema field = new FieldSchema();
-        field.setFieldName(column.getColumnName());
-        field.setLabel(column.getComment());
-        field.setRequired(!Boolean.TRUE.equals(column.getNullable()));
-        field.setPlaceholder("请输入" + column.getComment());
-        field.setType(resolveFieldType(column));
-        if ("select".equals(field.getType())) {
-            field.setOptions("draft:草稿,submitted:已提交,approved:已通过,rejected:已驳回,normal:正常,disabled:停用");
-        }
-        return field;
-    }
-
-    private String resolveFieldType(ColumnSchema column) {
-        String name = column.getColumnName();
-        String dataType = column.getDataType().toUpperCase(Locale.ROOT);
-        if ("status".equals(name) || name.endsWith("_status")) return "select";
-        if (dataType.contains("DATETIME")) return "datetime";
-        if (dataType.equals("DATE")) return "date";
-        if (dataType.contains("INT") || dataType.contains("DECIMAL")) return "number";
-        if (dataType.contains("500") || name.contains("remark") || name.contains("desc") || name.contains("reason")) return "textarea";
-        return "input";
-    }
-
-    private List<ApiSchema> generateApis(String moduleCode, RequirementRequest request) {
-        List<ApiSchema> apis = new ArrayList<>();
-        apis.add(api("分页查询", "GET", "/api/biz/" + moduleCode + "/list"));
-        apis.add(api("新增", "POST", "/api/biz/" + moduleCode));
-        apis.add(api("修改", "PUT", "/api/biz/" + moduleCode + "/{id}"));
-        apis.add(api("删除", "DELETE", "/api/biz/" + moduleCode + "/{id}"));
-        apis.add(api("详情", "GET", "/api/biz/" + moduleCode + "/{id}"));
-        if (Boolean.TRUE.equals(request.getNeedImportExport())) {
-            apis.add(api("导入", "POST", "/api/biz/" + moduleCode + "/import"));
-            apis.add(api("导出", "GET", "/api/biz/" + moduleCode + "/export"));
-        }
-        if (Boolean.TRUE.equals(request.getNeedStatistics())) {
-            apis.add(api("统计", "GET", "/api/biz/" + moduleCode + "/statistics"));
-        }
-        if (Boolean.TRUE.equals(request.getNeedApproval())) {
-            apis.add(api("提交审批", "POST", "/api/biz/" + moduleCode + "/{id}/submit"));
-            apis.add(api("审批处理", "POST", "/api/biz/" + moduleCode + "/{id}/approve"));
-        }
-        if (Boolean.TRUE.equals(request.getNeedNotification())) {
-            apis.add(api("消息提醒", "POST", "/api/biz/" + moduleCode + "/{id}/notify"));
-            apis.add(api("提醒列表", "GET", "/api/biz/" + moduleCode + "/notifications"));
-        }
-        return apis;
-    }
-
-    private ApiSchema api(String name, String method, String path) {
-        ApiSchema api = new ApiSchema();
-        api.setApiName(name);
-        api.setMethod(method);
-        api.setPath(path);
-        api.setDescription(name + "接口");
-        return api;
-    }
-
-    private List<PermissionSchema> generatePermissions(String moduleCode, String moduleName, RequirementRequest request) {
-        List<PermissionSchema> permissions = new ArrayList<>();
-        addPermission(permissions, moduleCode, moduleName, "list", "查看");
-        addPermission(permissions, moduleCode, moduleName, "add", "新增");
-        addPermission(permissions, moduleCode, moduleName, "edit", "编辑");
-        addPermission(permissions, moduleCode, moduleName, "delete", "删除");
-        if (Boolean.TRUE.equals(request.getNeedImportExport())) {
-            addPermission(permissions, moduleCode, moduleName, "import", "导入");
-            addPermission(permissions, moduleCode, moduleName, "export", "导出");
-        }
-        if (Boolean.TRUE.equals(request.getNeedStatistics())) {
-            addPermission(permissions, moduleCode, moduleName, "statistics", "统计");
-        }
-        if (Boolean.TRUE.equals(request.getNeedApproval())) {
-            addPermission(permissions, moduleCode, moduleName, "approve", "审批");
-        }
-        if (Boolean.TRUE.equals(request.getNeedNotification())) {
-            addPermission(permissions, moduleCode, moduleName, "notify", "提醒");
-        }
-        return permissions;
-    }
-
-    private void addPermission(List<PermissionSchema> permissions, String moduleCode, String moduleName, String action, String actionName) {
-        PermissionSchema permission = new PermissionSchema();
-        permission.setPermissionCode(moduleCode + ":" + action);
-        permission.setPermissionName(moduleName + actionName);
-        permission.setModuleName(moduleName);
-        permissions.add(permission);
-    }
-
-    private List<MenuSchema> generateMenus(String moduleCode, String moduleName) {
-        List<MenuSchema> menus = new ArrayList<>();
-        MenuSchema mainMenu = new MenuSchema();
-        mainMenu.setMenuName(moduleName);
-        mainMenu.setPath("/module-runtime/" + moduleCode);
-        mainMenu.setComponent("ModuleRuntime");
-        mainMenu.setParentId(0L);
-        mainMenu.setIcon("component");
-        mainMenu.setSortOrder(100);
-        mainMenu.setMenuType(2);
-        menus.add(mainMenu);
-        return menus;
     }
 
     @Override
@@ -656,7 +460,12 @@ public class AiEngineServiceImpl implements AiEngineService {
 
     private String designPrompt(ModuleDesign design) {
         try {
-            return "请基于以下 ModuleDesign 生成代码。ModuleDesign JSON：\n" + objectMapper.writeValueAsString(design);
+            return """
+                    请基于以下 ModuleDesign 生成代码。
+                    必须严格使用 moduleCode、moduleName、tables、pages、apis、permissions、menus 中的信息。
+                    不要新增登录、权限系统、平台架构或外部依赖。
+                    ModuleDesign JSON：
+                    """ + objectMapper.writeValueAsString(design);
         } catch (Exception e) {
             return "请基于模块编码 " + design.getModuleCode() + " 和模块名称 " + design.getModuleName() + " 生成代码。";
         }
@@ -665,39 +474,85 @@ public class AiEngineServiceImpl implements AiEngineService {
     private String frontendCodePrompt() {
         return """
                 你是 BizAgent 平台的 Vue3 + Element Plus 前端代码生成器。
-                必须基于输入的 ModuleDesign 生成真实可用的模块前端代码，不要复述需求。
+                必须基于输入的 ModuleDesign 生成真实可用的模块前端代码，用于预览和发布后的模块页面。
                 只输出代码文本，不要 Markdown，不要解释。
-                输出格式必须分段包含：
+
+                一、输出格式
+                必须严格按以下分段输出，分段标题一字不差：
                 // ========== api.js ==========
                 // ========== List.vue ==========
                 // ========== Form.vue ==========
                 // ========== Detail.vue ==========
-                如果 ModuleDesign 包含 statistics/approval/mobile 页面，也继续输出对应 Vue 文件分段。
-                代码要求：
-                1. 使用 Vue3 script setup 和 Element Plus。
-                2. api.js 从 ../../api 导入 request，并请求 /biz/{moduleCode} 系列接口。
-                3. 表格、表单、详情字段必须来自主表字段，排除 id/create_by/create_time/update_by/update_time/del_flag/project_id 等系统字段。
-                4. 必填、日期、数字、下拉、textarea 控件要按字段类型生成。
-                5. 不生成登录、权限系统、独立项目或新的基础架构。
+                如果 ModuleDesign 包含 statistics/approval/mobile 页面，也继续输出：
+                // ========== Statistics.vue ==========
+                // ========== Approval.vue ==========
+                // ========== Mobile.vue ==========
+
+                二、运行约束
+                1. Vue 文件使用 Vue3 <script setup>。
+                2. UI 使用 Element Plus 组件，不引入未声明的新 UI 库。
+                3. api.js 必须从 ../../api 导入 request。
+                4. 接口路径必须使用 /biz/{moduleCode}，因为 axios baseURL 已是 /api。
+                5. 所有列表、新增、编辑、删除、详情、导入、导出、统计、审批、提醒动作必须调用 api.js。
+                6. 不生成 Router、main.js、App.vue、登录、权限系统或独立项目。
+
+                三、页面行为
+                List.vue：
+                1. 展示主业务表字段，排除 id/create_by/create_time/update_by/update_time/del_flag/project_id，必要时可显示创建时间。
+                2. 包含查询区、表格、分页、新增、编辑、详情、删除按钮。
+                3. 如果存在 import/export/statistics/approve/notify 权限或 API，页面上提供对应操作入口。
+                4. 删除必须二次确认。
+
+                Form.vue：
+                1. 支持新增和编辑。
+                2. 根据字段类型生成 input/textarea/select/date/datetime/number。
+                3. required=true 的字段必须有表单校验。
+                4. status/select 字段必须使用 options 显示中文标签。
+
+                Detail.vue：
+                1. 使用 el-descriptions 展示所有业务字段和状态中文含义。
+                2. 提供返回和编辑事件。
+
+                四、代码质量
+                1. 所有变量名使用清晰英文。
+                2. 异步操作必须 try/catch，并用 ElMessage 提示成功/失败。
+                3. 不要留空函数，不要生成伪代码。
+                4. 输出必须是可保存到对应文件的完整代码。
                 """;
     }
 
     private String backendCodePrompt() {
         return """
                 你是 BizAgent 平台的 Spring Boot 3 + MyBatis Plus 后端代码生成器。
-                必须基于输入的 ModuleDesign 生成模块后端草案代码，不要复述需求。
+                必须基于输入的 ModuleDesign 生成模块后端代码草案，供保存、审阅和后续编译集成。
                 只输出代码文本，不要 Markdown，不要解释。
-                输出格式必须分段包含：
+
+                一、输出格式
+                必须严格按以下分段输出，分段标题一字不差：
                 // ========== Entity ==========
                 // ========== Mapper ==========
                 // ========== Service ==========
                 // ========== Controller ==========
-                代码要求：
+
+                二、技术约束
                 1. package 使用 com.example.bizagent.modules.{moduleCode}.*
-                2. Entity 使用 @TableName 指向主业务表，包含主表业务字段和 id/createBy/createTime/updateBy/updateTime/delFlag/projectId。
-                3. Controller 路径使用 /api/biz/{moduleCode}，提供 list/detail/create/update/delete。
-                4. 查询必须过滤 delFlag=0 和 projectId，删除优先软删除。
-                5. 不生成登录、权限系统、独立项目或新的基础架构。
+                2. 使用 Lombok @Data、MyBatis Plus @TableName、@TableId。
+                3. Entity 字段使用 Java 驼峰命名，映射数据库 snake_case 字段。
+                4. Controller 路径使用 /api/biz/{moduleCode}。
+                5. 返回值使用 com.example.bizagent.common.ResponseEntity 和 PageResponse。
+                6. 不生成登录、权限系统、独立项目、pom.xml、application.yml。
+
+                三、接口要求
+                1. 必须提供 list/detail/create/update/delete。
+                2. list 必须支持 pageNum、pageSize，并过滤 delFlag=0、projectId。
+                3. create 必须写入 projectId；update/delete 必须校验 projectId。
+                4. delete 使用软删除 delFlag=1。
+                5. 如果 ModuleDesign 包含审批、导入导出、统计、消息提醒 API，要补对应方法草案。
+
+                四、代码质量
+                1. 输出完整 Java 类代码，不能省略 import。
+                2. 不要留 TODO 作为核心逻辑。
+                3. 不要使用不存在的平台类。
                 """;
     }
 
@@ -706,13 +561,28 @@ public class AiEngineServiceImpl implements AiEngineService {
                 你是 BizAgent 平台的 MySQL 8 SQL 生成器。
                 必须基于输入的 ModuleDesign 生成可执行 SQL，不要复述需求。
                 只输出 SQL，不要 Markdown，不要解释。
-                SQL 要求：
+
+                一、SQL 范围
                 1. 每张表使用 CREATE TABLE IF NOT EXISTS。
                 2. 表名必须严格来自 ModuleDesign，不得新增系统表。
                 3. 每张业务表必须包含 id BIGINT AUTO_INCREMENT PRIMARY KEY。
                 4. 每张业务表必须包含 create_by、create_time、update_by、update_time、del_flag、project_id。
                 5. 使用 ENGINE=InnoDB DEFAULT CHARSET=utf8mb4，中文 COMMENT 必须保留。
                 6. 禁止 DROP、TRUNCATE、DELETE、UPDATE、ALTER 系统表。
+
+                二、字段要求
+                1. 字段顺序：id、业务字段、create_by、create_time、update_by、update_time、del_flag、project_id。
+                2. VARCHAR 必须指定长度。
+                3. DECIMAL 使用 DECIMAL(18,2)。
+                4. 日期使用 DATE，时间使用 DATETIME。
+                5. status 默认值必须使用单引号，例如 DEFAULT 'draft'。
+                6. create_time 默认 CURRENT_TIMESTAMP，update_time 默认 CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP。
+
+                三、索引建议
+                每张主表至少增加普通索引：
+                KEY idx_project_id (project_id)
+                KEY idx_status (status) 仅当存在 status 字段。
+                KEY idx_create_time (create_time)
                 """;
     }
 
@@ -1006,340 +876,6 @@ public class AiEngineServiceImpl implements AiEngineService {
 
     private void write(Path path, String content) throws Exception {
         Files.writeString(path, content, StandardCharsets.UTF_8);
-    }
-
-    private String moduleApiJs(ModuleDesign design) {
-        return """
-                import request from '../../api'
-
-                export const moduleCode = '%s'
-                export const list = (params) => request.get(`/biz/${moduleCode}/list`, { params })
-                export const detail = (id) => request.get(`/biz/${moduleCode}/${id}`)
-                export const create = (data) => request.post(`/biz/${moduleCode}`, data)
-                export const update = (id, data) => request.put(`/biz/${moduleCode}/${id}`, data)
-                export const remove = (id) => request.delete(`/biz/${moduleCode}/${id}`)
-                """.formatted(design.getModuleCode());
-    }
-
-    private String moduleListVue(ModuleDesign design) {
-        String columns = design.getTables().get(0).getColumns().stream()
-                .filter(column -> !Boolean.TRUE.equals(column.getPrimaryKey()))
-                .limit(6)
-                .map(column -> "      <el-table-column prop=\"" + column.getColumnName() + "\" label=\"" + column.getComment() + "\" />")
-                .reduce("", (left, right) -> left + right + "\n");
-        return """
-                <template>
-                  <div class="generated-module">
-                    <div class="module-toolbar">
-                      <h2>%s</h2>
-                      <el-button type="primary" @click="handleAdd">新增</el-button>
-                    </div>
-                    <el-table :data="tableData" border @row-click="handleView">
-                %s      <el-table-column prop="id" label="ID" width="80" />
-                      <el-table-column label="操作" width="180">
-                        <template #default="scope">
-                          <el-button size="small" @click="handleEdit(scope.row)">编辑</el-button>
-                          <el-button size="small" type="danger" @click="handleDelete(scope.row)">删除</el-button>
-                        </template>
-                      </el-table-column>
-                    </el-table>
-                    <el-pagination @size-change="handleSizeChange" @current-change="handleCurrentChange"
-                      :current-page="pageNum" :page-sizes="[10, 20, 50]" :page-size="pageSize"
-                      :total="total" layout="total, sizes, prev, pager, next, jumper" />
-                  </div>
-                </template>
-
-                <script setup>
-                import { ref, onMounted } from 'vue'
-                import * as api from './api'
-
-                defineOptions({ name: '%sList' })
-
-                const tableData = ref([])
-                const pageNum = ref(1)
-                const pageSize = ref(10)
-                const total = ref(0)
-
-                const loadData = async () => {
-                  const res = await api.list({ pageNum: pageNum.value, pageSize: pageSize.value })
-                  tableData.value = res.data.data.records
-                  total.value = res.data.data.total
-                }
-
-                const handleSizeChange = (val) => { pageSize.value = val; loadData() }
-                const handleCurrentChange = (val) => { pageNum.value = val; loadData() }
-                const handleAdd = () => { }
-                const handleEdit = (row) => { }
-                const handleDelete = (row) => { }
-                const handleView = (row) => { }
-
-                onMounted(() => loadData())
-                </script>
-
-                <style scoped>
-                .generated-module { padding: 20px; }
-                .module-toolbar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
-                </style>
-                """.formatted(design.getModuleName(), columns, upperCamel(design.getModuleCode()));
-    }
-
-    private String moduleFormVue(ModuleDesign design) {
-        String fields = design.getTables().get(0).getColumns().stream()
-                .filter(column -> !Boolean.TRUE.equals(column.getPrimaryKey()) && !column.getColumnName().startsWith("create_") && !column.getColumnName().startsWith("update_"))
-                .map(column -> {
-                    String fieldType = resolveFieldType(column);
-                    String required = !Boolean.TRUE.equals(column.getNullable()) ? "required" : "";
-                    if ("textarea".equals(fieldType)) {
-                        return "      <el-form-item label=\"" + column.getComment() + "\" " + required + "><el-input v-model=\"form." + column.getColumnName() + "\" type=\"textarea\" :rows=\"3\" /></el-form-item>";
-                    } else if ("select".equals(fieldType)) {
-                        return "      <el-form-item label=\"" + column.getComment() + "\" " + required + "><el-select v-model=\"form." + column.getColumnName() + "\"><el-option label=\"草稿\" value=\"draft\" /><el-option label=\"已提交\" value=\"submitted\" /><el-option label=\"已通过\" value=\"approved\" /></el-select></el-form-item>";
-                    } else if ("date".equals(fieldType)) {
-                        return "      <el-form-item label=\"" + column.getComment() + "\" " + required + "><el-date-picker v-model=\"form." + column.getColumnName() + "\" type=\"date\" style=\"width:100%\" /></el-form-item>";
-                    } else if ("datetime".equals(fieldType)) {
-                        return "      <el-form-item label=\"" + column.getComment() + "\" " + required + "><el-date-picker v-model=\"form." + column.getColumnName() + "\" type=\"datetime\" style=\"width:100%\" /></el-form-item>";
-                    } else if ("number".equals(fieldType)) {
-                        return "      <el-form-item label=\"" + column.getComment() + "\" " + required + "><el-input v-model.number=\"form." + column.getColumnName() + "\" type=\"number\" /></el-form-item>";
-                    }
-                    return "      <el-form-item label=\"" + column.getComment() + "\" " + required + "><el-input v-model=\"form." + column.getColumnName() + "\" /></el-form-item>";
-                })
-                .reduce("", (left, right) -> left + right + "\n");
-        return """
-                <template>
-                  <div class="generated-module">
-                    <el-form ref="formRef" :model="form" label-width="120px">
-                %s    </el-form>
-                    <div style="margin-top: 20px; text-align: right;">
-                      <el-button @click="handleCancel">取消</el-button>
-                      <el-button type="primary" @click="handleSubmit">保存</el-button>
-                    </div>
-                  </div>
-                </template>
-
-                <script setup>
-                import { ref, reactive, onMounted } from 'vue'
-                import * as api from './api'
-
-                defineOptions({ name: '%sForm' })
-
-                const props = defineProps({ id: [Number, String] })
-                const emit = defineEmits(['close'])
-
-                const formRef = ref(null)
-                const form = reactive({})
-
-                const initForm = () => {
-                }
-
-                const handleSubmit = async () => {
-                  if (props.id) await api.update(props.id, form)
-                  else await api.create(form)
-                  emit('close')
-                }
-
-                const handleCancel = () => emit('close')
-
-                onMounted(() => {
-                  initForm()
-                  if (props.id) api.detail(props.id).then(res => Object.assign(form, res.data.data))
-                })
-                </script>
-
-                <style scoped>
-                .generated-module { padding: 20px; }
-                </style>
-                """.formatted(fields, upperCamel(design.getModuleCode()));
-    }
-
-    private String moduleDetailVue(ModuleDesign design) {
-        String fields = design.getTables().get(0).getColumns().stream()
-                .filter(column -> !Boolean.TRUE.equals(column.getPrimaryKey()))
-                .map(column -> "      <el-descriptions-item label=\"" + column.getComment() + "\">{{ form." + column.getColumnName() + " || '-' }}</el-descriptions-item>")
-                .reduce("", (left, right) -> left + right + "\n");
-        return """
-                <template>
-                  <div class="generated-module">
-                    <el-descriptions title="%s详情" :column="2" border>
-                %s    </el-descriptions>
-                    <div style="margin-top: 20px; text-align: right;">
-                      <el-button @click="handleEdit">编辑</el-button>
-                      <el-button @click="handleBack">返回</el-button>
-                    </div>
-                  </div>
-                </template>
-
-                <script setup>
-                import { reactive, onMounted } from 'vue'
-                import * as api from './api'
-
-                defineOptions({ name: '%sDetail' })
-
-                const props = defineProps({ id: [Number, String] })
-                const emit = defineEmits(['back', 'edit'])
-
-                const form = reactive({})
-
-                const handleEdit = () => emit('edit', props.id)
-                const handleBack = () => emit('back')
-
-                onMounted(() => {
-                  if (props.id) api.detail(props.id).then(res => Object.assign(form, res.data.data))
-                })
-                </script>
-
-                <style scoped>
-                .generated-module { padding: 20px; }
-                </style>
-                """.formatted(design.getModuleName(), fields, upperCamel(design.getModuleCode()));
-    }
-
-    private String moduleEntity(ModuleDesign design) {
-        String className = upperCamel(design.getModuleCode()) + "Entity";
-        String fields = design.getTables().get(0).getColumns().stream()
-                .filter(column -> !column.getColumnName().equals("id") && !column.getColumnName().equals("create_by") && !column.getColumnName().equals("create_time") && !column.getColumnName().equals("update_by") && !column.getColumnName().equals("update_time") && !column.getColumnName().equals("del_flag") && !column.getColumnName().equals("project_id"))
-                .map(column -> {
-                    String javaType = resolveJavaType(column.getDataType());
-                    return "    private " + javaType + " " + column.getColumnName() + "; // " + column.getComment();
-                })
-                .reduce("", (left, right) -> left + right + "\n");
-        return """
-                package com.example.bizagent.modules.%s.entity;
-
-                import com.baomidou.mybatisplus.annotation.IdType;
-                import com.baomidou.mybatisplus.annotation.TableField;
-                import com.baomidou.mybatisplus.annotation.TableId;
-                import com.baomidou.mybatisplus.annotation.TableName;
-                import lombok.Data;
-
-                @Data
-                @TableName("%s")
-                public class %s {
-
-                    @TableId(type = IdType.AUTO)
-                    private Long id;
-
-                %s    private Long createBy;
-                    private java.time.LocalDateTime createTime;
-                    private Long updateBy;
-                    private java.time.LocalDateTime updateTime;
-                    private Integer delFlag;
-                    private Long projectId;
-                }
-                """.formatted(design.getModuleCode(), design.getTables().get(0).getTableName(), className, fields);
-    }
-
-    private String moduleMapper(ModuleDesign design) {
-        String className = upperCamel(design.getModuleCode()) + "Mapper";
-        String entityName = upperCamel(design.getModuleCode()) + "Entity";
-        return """
-                package com.example.bizagent.modules.%s.mapper;
-
-                import com.baomidou.mybatisplus.core.mapper.BaseMapper;
-                import com.example.bizagent.modules.%s.entity.%s;
-                import org.apache.ibatis.annotations.Mapper;
-
-                @Mapper
-                public interface %s extends BaseMapper<%s> {
-                }
-                """.formatted(design.getModuleCode(), design.getModuleCode(), entityName, className, entityName);
-    }
-
-    private String moduleService(ModuleDesign design) {
-        String className = upperCamel(design.getModuleCode()) + "Service";
-        String entityName = upperCamel(design.getModuleCode()) + "Entity";
-        String mapperName = upperCamel(design.getModuleCode()) + "Mapper";
-        return """
-                package com.example.bizagent.modules.%s.service;
-
-                import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
-                import com.example.bizagent.modules.%s.entity.%s;
-                import com.example.bizagent.modules.%s.mapper.%s;
-                import org.springframework.stereotype.Service;
-
-                @Service
-                public class %s extends ServiceImpl<%s, %s> {
-
-                    public %s(%s mapper) {
-                        super(mapper);
-                    }
-                }
-                """.formatted(design.getModuleCode(), design.getModuleCode(), entityName, design.getModuleCode(), mapperName, className, mapperName, entityName, className, mapperName);
-    }
-
-    private String moduleController(ModuleDesign design) {
-        String className = upperCamel(design.getModuleCode()) + "Controller";
-        String serviceName = upperCamel(design.getModuleCode()) + "Service";
-        String entityName = upperCamel(design.getModuleCode()) + "Entity";
-        return """
-                package com.example.bizagent.modules.%s.controller;
-
-                import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
-                import com.baomidou.mybatisplus.core.metadata.IPage;
-                import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
-                import com.example.bizagent.common.PageResponse;
-                import com.example.bizagent.common.ResponseEntity;
-                import com.example.bizagent.modules.%s.entity.%s;
-                import com.example.bizagent.modules.%s.service.%s;
-                import org.springframework.web.bind.annotation.*;
-
-                @RestController
-                @RequestMapping("/api/biz/%s")
-                public class %s {
-
-                    private final %s service;
-
-                    public %s(%s service) {
-                        this.service = service;
-                    }
-
-                    @GetMapping("/list")
-                    public ResponseEntity<PageResponse<%s>> list(@RequestParam(defaultValue = "1") Integer pageNum,
-                                                               @RequestParam(defaultValue = "10") Integer pageSize) {
-                        IPage<%s> page = service.page(new Page<>(pageNum, pageSize),
-                            new LambdaQueryWrapper<%s>().eq(%s::getDelFlag, 0).orderByDesc(%s::getCreateTime));
-                        return ResponseEntity.success(PageResponse.of(page.getRecords(), page.getTotal(), pageNum, pageSize));
-                    }
-
-                    @GetMapping("/{id}")
-                    public ResponseEntity<%s> get(@PathVariable Long id) {
-                        return ResponseEntity.success(service.getById(id));
-                    }
-
-                    @PostMapping
-                    public ResponseEntity<%s> create(@RequestBody %s entity) {
-                        service.save(entity);
-                        return ResponseEntity.success("新增成功", entity);
-                    }
-
-                    @PutMapping("/{id}")
-                    public ResponseEntity<%s> update(@PathVariable Long id, @RequestBody %s entity) {
-                        entity.setId(id);
-                        service.updateById(entity);
-                        return ResponseEntity.success("修改成功", entity);
-                    }
-
-                    @DeleteMapping("/{id}")
-                    public ResponseEntity<Void> delete(@PathVariable Long id) {
-                        service.removeById(id);
-                        return ResponseEntity.success("删除成功");
-                    }
-                }
-                """.formatted(
-                        design.getModuleCode(), design.getModuleCode(), entityName,
-                        design.getModuleCode(), serviceName, design.getModuleCode(),
-                        className, serviceName, className, serviceName,
-                        entityName, entityName, entityName, entityName, entityName,
-                        entityName, entityName, entityName, entityName, entityName);
-    }
-
-    private String resolveJavaType(String dataType) {
-        String type = Objects.toString(dataType, "").toUpperCase(Locale.ROOT).trim();
-        if (type.contains("BIGINT")) return "Long";
-        if (type.contains("INT")) return "Integer";
-        if (type.contains("DECIMAL")) return "java.math.BigDecimal";
-        if (type.equals("DATE")) return "java.time.LocalDate";
-        if (type.contains("DATETIME")) return "java.time.LocalDateTime";
-        if (type.equals("TEXT")) return "String";
-        return "String";
     }
 
     private void validateDesign(ModuleDesign design) {

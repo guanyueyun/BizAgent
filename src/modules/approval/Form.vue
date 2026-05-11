@@ -4,9 +4,6 @@
       <el-form-item label="业务编号" required><el-input v-model="form.biz_no" /></el-form-item>
       <el-form-item label="名称" required><el-input v-model="form.name" /></el-form-item>
       <el-form-item label="负责人" ><el-input v-model="form.owner_name" /></el-form-item>
-      <el-form-item label="联系电话" ><el-input v-model="form.contact_phone" /></el-form-item>
-      <el-form-item label="业务日期" ><el-date-picker v-model="form.biz_date" type="date" style="width:100%" /></el-form-item>
-      <el-form-item label="业务时间" ><el-date-picker v-model="form.biz_time" type="datetime" style="width:100%" /></el-form-item>
       <el-form-item label="状态" required><el-select v-model="form.status"><el-option label="草稿" value="draft" /><el-option label="已提交" value="submitted" /><el-option label="已通过" value="approved" /></el-select></el-form-item>
       <el-form-item label="备注" ><el-input v-model="form.remark" type="textarea" :rows="3" /></el-form-item>
     </el-form>
@@ -21,7 +18,7 @@
 import { ref, reactive, onMounted } from 'vue'
 import * as api from './api'
 
-defineOptions({ name: 'ModuleForm' })
+defineOptions({ name: 'ApprovalForm' })
 
 const props = defineProps({ id: [Number, String] })
 const emit = defineEmits(['close'])

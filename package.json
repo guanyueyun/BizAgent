@@ -1,0 +1,21 @@
+{
+  "name": "bizagent",
+  "version": "1.0.0",
+  "description": "基于AI驱动的企业级低代码开发平台，支持通过自然语言描述自动生成业务功能模块。",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/guanyueyun/BizAgent.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/guanyueyun/BizAgent/issues"
+  },
+  "homepage": "https://github.com/guanyueyun/BizAgent#readme"
+}
