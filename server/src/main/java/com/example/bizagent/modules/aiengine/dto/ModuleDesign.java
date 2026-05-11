@@ -14,6 +14,7 @@ public class ModuleDesign {
     private String moduleCode;
     private String description;
     private Long projectId;
+    private Long modelConfigId;
     private List<TableSchema> tables;
     private List<PageSchema> pages;
     private List<ApiSchema> apis;

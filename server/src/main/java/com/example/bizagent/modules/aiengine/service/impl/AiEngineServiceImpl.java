@@ -96,6 +96,7 @@ public class AiEngineServiceImpl implements AiEngineService {
         design.setModuleCode(moduleCode);
         design.setDescription(requirement);
         design.setProjectId(resolveProjectId(request.getProjectId()));
+        design.setModelConfigId(request.getModelConfigId());
         design.setTables(tables);
         design.setPages(generatePages(moduleCode, moduleName, request, tables));
         design.setApis(generateApis(moduleCode, request));
@@ -286,6 +287,7 @@ public class AiEngineServiceImpl implements AiEngineService {
             design.setDescription(request.getRequirement());
         }
         design.setProjectId(resolveProjectId(request.getProjectId()));
+        design.setModelConfigId(request.getModelConfigId());
         if (design.getTables() == null || design.getTables().isEmpty()) {
             design.setTables(generateTables(design.getModuleCode(), request));
         } else {
