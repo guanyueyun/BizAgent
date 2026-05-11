@@ -1,0 +1,312 @@
+{
+  "moduleName" : "业务模块",
+  "moduleCode" : "module",
+  "description" : "业务目标：实现班组的增删改查管理功能，支持维护班组基本信息。\n核心对象：班组。\n页面：班组管理列表页面、班组新增/编辑表单页面。\n字段：班组名称、班组编码、所属部门、班组长、班组人数、状态（启用/停用）、创建时间、备注。\n流程：管理员在列表页新增或编辑班组信息，提交后保存至数据库，支持对班组进行启用/停用操作。\n权限：管理员可查看、新增、编辑、停用班组信息；普通用户仅可查看班组列表。\n审批：无需审批。\n导入导出：无需导入导出。\n移动端：无需移动端支持。\n统计：无需统计。\n通知：无需通知。",
+  "projectId" : 1,
+  "tables" : [ {
+    "tableName" : "biz_module_main",
+    "tableComment" : "module主表",
+    "columns" : [ {
+      "columnName" : "id",
+      "dataType" : "BIGINT",
+      "comment" : "主键",
+      "nullable" : false,
+      "defaultValue" : null,
+      "primaryKey" : true,
+      "autoIncrement" : true
+    }, {
+      "columnName" : "biz_no",
+      "dataType" : "VARCHAR(50)",
+      "comment" : "业务编号",
+      "nullable" : false,
+      "defaultValue" : null,
+      "primaryKey" : false,
+      "autoIncrement" : false
+    }, {
+      "columnName" : "name",
+      "dataType" : "VARCHAR(100)",
+      "comment" : "名称",
+      "nullable" : false,
+      "defaultValue" : null,
+      "primaryKey" : false,
+      "autoIncrement" : false
+    }, {
+      "columnName" : "owner_name",
+      "dataType" : "VARCHAR(100)",
+      "comment" : "负责人",
+      "nullable" : true,
+      "defaultValue" : null,
+      "primaryKey" : false,
+      "autoIncrement" : false
+    }, {
+      "columnName" : "biz_time",
+      "dataType" : "DATETIME",
+      "comment" : "业务时间",
+      "nullable" : true,
+      "defaultValue" : null,
+      "primaryKey" : false,
+      "autoIncrement" : false
+    }, {
+      "columnName" : "status",
+      "dataType" : "VARCHAR(30)",
+      "comment" : "状态",
+      "nullable" : false,
+      "defaultValue" : "'draft'",
+      "primaryKey" : false,
+      "autoIncrement" : false
+    }, {
+      "columnName" : "remark",
+      "dataType" : "VARCHAR(500)",
+      "comment" : "备注",
+      "nullable" : true,
+      "defaultValue" : null,
+      "primaryKey" : false,
+      "autoIncrement" : false
+    } ]
+  } ],
+  "pages" : [ {
+    "pageName" : "业务模块列表",
+    "pageType" : "list",
+    "path" : "/module/list",
+    "component" : "modules/module/List",
+    "fields" : [ {
+      "fieldName" : "biz_no",
+      "label" : "业务编号",
+      "type" : "input",
+      "required" : true,
+      "placeholder" : "请输入业务编号",
+      "options" : null
+    }, {
+      "fieldName" : "name",
+      "label" : "名称",
+      "type" : "input",
+      "required" : true,
+      "placeholder" : "请输入名称",
+      "options" : null
+    }, {
+      "fieldName" : "owner_name",
+      "label" : "负责人",
+      "type" : "input",
+      "required" : false,
+      "placeholder" : "请输入负责人",
+      "options" : null
+    }, {
+      "fieldName" : "biz_time",
+      "label" : "业务时间",
+      "type" : "datetime",
+      "required" : false,
+      "placeholder" : "请输入业务时间",
+      "options" : null
+    }, {
+      "fieldName" : "status",
+      "label" : "状态",
+      "type" : "select",
+      "required" : true,
+      "placeholder" : "请输入状态",
+      "options" : "draft:草稿,submitted:已提交,approved:已通过,rejected:已驳回,normal:正常,disabled:停用"
+    }, {
+      "fieldName" : "remark",
+      "label" : "备注",
+      "type" : "textarea",
+      "required" : false,
+      "placeholder" : "请输入备注",
+      "options" : null
+    } ]
+  }, {
+    "pageName" : "业务模块新增",
+    "pageType" : "add",
+    "path" : "/module/add",
+    "component" : "modules/module/Form",
+    "fields" : [ {
+      "fieldName" : "biz_no",
+      "label" : "业务编号",
+      "type" : "input",
+      "required" : true,
+      "placeholder" : "请输入业务编号",
+      "options" : null
+    }, {
+      "fieldName" : "name",
+      "label" : "名称",
+      "type" : "input",
+      "required" : true,
+      "placeholder" : "请输入名称",
+      "options" : null
+    }, {
+      "fieldName" : "owner_name",
+      "label" : "负责人",
+      "type" : "input",
+      "required" : false,
+      "placeholder" : "请输入负责人",
+      "options" : null
+    }, {
+      "fieldName" : "biz_time",
+      "label" : "业务时间",
+      "type" : "datetime",
+      "required" : false,
+      "placeholder" : "请输入业务时间",
+      "options" : null
+    }, {
+      "fieldName" : "status",
+      "label" : "状态",
+      "type" : "select",
+      "required" : true,
+      "placeholder" : "请输入状态",
+      "options" : "draft:草稿,submitted:已提交,approved:已通过,rejected:已驳回,normal:正常,disabled:停用"
+    }, {
+      "fieldName" : "remark",
+      "label" : "备注",
+      "type" : "textarea",
+      "required" : false,
+      "placeholder" : "请输入备注",
+      "options" : null
+    } ]
+  }, {
+    "pageName" : "业务模块编辑",
+    "pageType" : "edit",
+    "path" : "/module/edit/:id",
+    "component" : "modules/module/Form",
+    "fields" : [ {
+      "fieldName" : "biz_no",
+      "label" : "业务编号",
+      "type" : "input",
+      "required" : true,
+      "placeholder" : "请输入业务编号",
+      "options" : null
+    }, {
+      "fieldName" : "name",
+      "label" : "名称",
+      "type" : "input",
+      "required" : true,
+      "placeholder" : "请输入名称",
+      "options" : null
+    }, {
+      "fieldName" : "owner_name",
+      "label" : "负责人",
+      "type" : "input",
+      "required" : false,
+      "placeholder" : "请输入负责人",
+      "options" : null
+    }, {
+      "fieldName" : "biz_time",
+      "label" : "业务时间",
+      "type" : "datetime",
+      "required" : false,
+      "placeholder" : "请输入业务时间",
+      "options" : null
+    }, {
+      "fieldName" : "status",
+      "label" : "状态",
+      "type" : "select",
+      "required" : true,
+      "placeholder" : "请输入状态",
+      "options" : "draft:草稿,submitted:已提交,approved:已通过,rejected:已驳回,normal:正常,disabled:停用"
+    }, {
+      "fieldName" : "remark",
+      "label" : "备注",
+      "type" : "textarea",
+      "required" : false,
+      "placeholder" : "请输入备注",
+      "options" : null
+    } ]
+  }, {
+    "pageName" : "业务模块详情",
+    "pageType" : "detail",
+    "path" : "/module/detail/:id",
+    "component" : "modules/module/Detail",
+    "fields" : [ {
+      "fieldName" : "biz_no",
+      "label" : "业务编号",
+      "type" : "input",
+      "required" : true,
+      "placeholder" : "请输入业务编号",
+      "options" : null
+    }, {
+      "fieldName" : "name",
+      "label" : "名称",
+      "type" : "input",
+      "required" : true,
+      "placeholder" : "请输入名称",
+      "options" : null
+    }, {
+      "fieldName" : "owner_name",
+      "label" : "负责人",
+      "type" : "input",
+      "required" : false,
+      "placeholder" : "请输入负责人",
+      "options" : null
+    }, {
+      "fieldName" : "biz_time",
+      "label" : "业务时间",
+      "type" : "datetime",
+      "required" : false,
+      "placeholder" : "请输入业务时间",
+      "options" : null
+    }, {
+      "fieldName" : "status",
+      "label" : "状态",
+      "type" : "select",
+      "required" : true,
+      "placeholder" : "请输入状态",
+      "options" : "draft:草稿,submitted:已提交,approved:已通过,rejected:已驳回,normal:正常,disabled:停用"
+    }, {
+      "fieldName" : "remark",
+      "label" : "备注",
+      "type" : "textarea",
+      "required" : false,
+      "placeholder" : "请输入备注",
+      "options" : null
+    } ]
+  } ],
+  "apis" : [ {
+    "apiName" : "分页查询",
+    "method" : "GET",
+    "path" : "/api/biz/module/list",
+    "description" : "分页查询接口"
+  }, {
+    "apiName" : "新增",
+    "method" : "POST",
+    "path" : "/api/biz/module",
+    "description" : "新增接口"
+  }, {
+    "apiName" : "修改",
+    "method" : "PUT",
+    "path" : "/api/biz/module/{id}",
+    "description" : "修改接口"
+  }, {
+    "apiName" : "删除",
+    "method" : "DELETE",
+    "path" : "/api/biz/module/{id}",
+    "description" : "删除接口"
+  }, {
+    "apiName" : "详情",
+    "method" : "GET",
+    "path" : "/api/biz/module/{id}",
+    "description" : "详情接口"
+  } ],
+  "permissions" : [ {
+    "permissionCode" : "module:list",
+    "permissionName" : "业务模块查看",
+    "moduleName" : "业务模块"
+  }, {
+    "permissionCode" : "module:add",
+    "permissionName" : "业务模块新增",
+    "moduleName" : "业务模块"
+  }, {
+    "permissionCode" : "module:edit",
+    "permissionName" : "业务模块编辑",
+    "moduleName" : "业务模块"
+  }, {
+    "permissionCode" : "module:delete",
+    "permissionName" : "业务模块删除",
+    "moduleName" : "业务模块"
+  } ],
+  "menus" : [ {
+    "menuName" : "业务模块",
+    "path" : "/module-runtime/module",
+    "component" : "ModuleRuntime",
+    "parentId" : 0,
+    "icon" : "component",
+    "sortOrder" : 100,
+    "menuType" : 2
+  } ]
+}

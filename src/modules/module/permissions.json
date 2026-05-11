@@ -1,0 +1,17 @@
+[ {
+  "permissionCode" : "module:list",
+  "permissionName" : "业务模块查看",
+  "moduleName" : "业务模块"
+}, {
+  "permissionCode" : "module:add",
+  "permissionName" : "业务模块新增",
+  "moduleName" : "业务模块"
+}, {
+  "permissionCode" : "module:edit",
+  "permissionName" : "业务模块编辑",
+  "moduleName" : "业务模块"
+}, {
+  "permissionCode" : "module:delete",
+  "permissionName" : "业务模块删除",
+  "moduleName" : "业务模块"
+} ]

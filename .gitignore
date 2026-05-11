@@ -1,0 +1,30 @@
+# Dependencies
+node_modules/
+
+# Build outputs
+dist/
+target/
+*.jar
+
+# Logs
+*.log
+*.out
+*.err
+
+# Local configuration and secrets
+.env
+.env.*
+application.yml
+application-*.yml
+application.yaml
+application-*.yaml
+!application.example.yml
+
+# IDE and local tooling
+.idea/
+.vscode/
+.trae/
+
+# OS files
+Thumbs.db
+Desktop.ini

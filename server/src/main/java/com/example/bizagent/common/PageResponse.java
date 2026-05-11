@@ -1,0 +1,23 @@
+
+package com.example.bizagent.common;
+
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+import java.util.List;
+
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+public class PageResponse<T> {
+
+    private List<T> records;
+    private long total;
+    private int pageNum;
+    private int pageSize;
+
+    public static <T> PageResponse<T> of(List<T> records, long total, int pageNum, int pageSize) {
+        return new PageResponse<>(records, total, pageNum, pageSize);
+    }
+}

@@ -1,0 +1,9 @@
+[ {
+  "menuName" : "业务模块",
+  "path" : "/module-runtime/module",
+  "component" : "ModuleRuntime",
+  "parentId" : 0,
+  "icon" : "component",
+  "sortOrder" : 100,
+  "menuType" : 2
+} ]

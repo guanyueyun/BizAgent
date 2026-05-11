@@ -1,0 +1,193 @@
+[ {
+  "pageName" : "业务模块列表",
+  "pageType" : "list",
+  "path" : "/module/list",
+  "component" : "modules/module/List",
+  "fields" : [ {
+    "fieldName" : "biz_no",
+    "label" : "业务编号",
+    "type" : "input",
+    "required" : true,
+    "placeholder" : "请输入业务编号",
+    "options" : null
+  }, {
+    "fieldName" : "name",
+    "label" : "名称",
+    "type" : "input",
+    "required" : true,
+    "placeholder" : "请输入名称",
+    "options" : null
+  }, {
+    "fieldName" : "owner_name",
+    "label" : "负责人",
+    "type" : "input",
+    "required" : false,
+    "placeholder" : "请输入负责人",
+    "options" : null
+  }, {
+    "fieldName" : "biz_time",
+    "label" : "业务时间",
+    "type" : "datetime",
+    "required" : false,
+    "placeholder" : "请输入业务时间",
+    "options" : null
+  }, {
+    "fieldName" : "status",
+    "label" : "状态",
+    "type" : "select",
+    "required" : true,
+    "placeholder" : "请输入状态",
+    "options" : "draft:草稿,submitted:已提交,approved:已通过,rejected:已驳回,normal:正常,disabled:停用"
+  }, {
+    "fieldName" : "remark",
+    "label" : "备注",
+    "type" : "textarea",
+    "required" : false,
+    "placeholder" : "请输入备注",
+    "options" : null
+  } ]
+}, {
+  "pageName" : "业务模块新增",
+  "pageType" : "add",
+  "path" : "/module/add",
+  "component" : "modules/module/Form",
+  "fields" : [ {
+    "fieldName" : "biz_no",
+    "label" : "业务编号",
+    "type" : "input",
+    "required" : true,
+    "placeholder" : "请输入业务编号",
+    "options" : null
+  }, {
+    "fieldName" : "name",
+    "label" : "名称",
+    "type" : "input",
+    "required" : true,
+    "placeholder" : "请输入名称",
+    "options" : null
+  }, {
+    "fieldName" : "owner_name",
+    "label" : "负责人",
+    "type" : "input",
+    "required" : false,
+    "placeholder" : "请输入负责人",
+    "options" : null
+  }, {
+    "fieldName" : "biz_time",
+    "label" : "业务时间",
+    "type" : "datetime",
+    "required" : false,
+    "placeholder" : "请输入业务时间",
+    "options" : null
+  }, {
+    "fieldName" : "status",
+    "label" : "状态",
+    "type" : "select",
+    "required" : true,
+    "placeholder" : "请输入状态",
+    "options" : "draft:草稿,submitted:已提交,approved:已通过,rejected:已驳回,normal:正常,disabled:停用"
+  }, {
+    "fieldName" : "remark",
+    "label" : "备注",
+    "type" : "textarea",
+    "required" : false,
+    "placeholder" : "请输入备注",
+    "options" : null
+  } ]
+}, {
+  "pageName" : "业务模块编辑",
+  "pageType" : "edit",
+  "path" : "/module/edit/:id",
+  "component" : "modules/module/Form",
+  "fields" : [ {
+    "fieldName" : "biz_no",
+    "label" : "业务编号",
+    "type" : "input",
+    "required" : true,
+    "placeholder" : "请输入业务编号",
+    "options" : null
+  }, {
+    "fieldName" : "name",
+    "label" : "名称",
+    "type" : "input",
+    "required" : true,
+    "placeholder" : "请输入名称",
+    "options" : null
+  }, {
+    "fieldName" : "owner_name",
+    "label" : "负责人",
+    "type" : "input",
+    "required" : false,
+    "placeholder" : "请输入负责人",
+    "options" : null
+  }, {
+    "fieldName" : "biz_time",
+    "label" : "业务时间",
+    "type" : "datetime",
+    "required" : false,
+    "placeholder" : "请输入业务时间",
+    "options" : null
+  }, {
+    "fieldName" : "status",
+    "label" : "状态",
+    "type" : "select",
+    "required" : true,
+    "placeholder" : "请输入状态",
+    "options" : "draft:草稿,submitted:已提交,approved:已通过,rejected:已驳回,normal:正常,disabled:停用"
+  }, {
+    "fieldName" : "remark",
+    "label" : "备注",
+    "type" : "textarea",
+    "required" : false,
+    "placeholder" : "请输入备注",
+    "options" : null
+  } ]
+}, {
+  "pageName" : "业务模块详情",
+  "pageType" : "detail",
+  "path" : "/module/detail/:id",
+  "component" : "modules/module/Detail",
+  "fields" : [ {
+    "fieldName" : "biz_no",
+    "label" : "业务编号",
+    "type" : "input",
+    "required" : true,
+    "placeholder" : "请输入业务编号",
+    "options" : null
+  }, {
+    "fieldName" : "name",
+    "label" : "名称",
+    "type" : "input",
+    "required" : true,
+    "placeholder" : "请输入名称",
+    "options" : null
+  }, {
+    "fieldName" : "owner_name",
+    "label" : "负责人",
+    "type" : "input",
+    "required" : false,
+    "placeholder" : "请输入负责人",
+    "options" : null
+  }, {
+    "fieldName" : "biz_time",
+    "label" : "业务时间",
+    "type" : "datetime",
+    "required" : false,
+    "placeholder" : "请输入业务时间",
+    "options" : null
+  }, {
+    "fieldName" : "status",
+    "label" : "状态",
+    "type" : "select",
+    "required" : true,
+    "placeholder" : "请输入状态",
+    "options" : "draft:草稿,submitted:已提交,approved:已通过,rejected:已驳回,normal:正常,disabled:停用"
+  }, {
+    "fieldName" : "remark",
+    "label" : "备注",
+    "type" : "textarea",
+    "required" : false,
+    "placeholder" : "请输入备注",
+    "options" : null
+  } ]
+} ]
