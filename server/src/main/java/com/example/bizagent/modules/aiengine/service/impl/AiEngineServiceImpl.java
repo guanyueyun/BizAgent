@@ -81,28 +81,7 @@ public class AiEngineServiceImpl implements AiEngineService {
             normalizeAiDesign(aiDesign, request);
             return aiDesign;
         }
-        operationLogService.log("AI_ANALYZE_FALLBACK", null, resolveProjectId(request.getProjectId()), "WARN", "模型分析不可用，已使用平台模板生成模块设计");
-        return analyzeRequirementByTemplate(request);
-    }
-
-    private ModuleDesign analyzeRequirementByTemplate(RequirementRequest request) {
-        String requirement = Objects.toString(request.getRequirement(), "").trim();
-        String moduleCode = sanitizeModuleCode(extractModuleCode(requirement));
-        String moduleName = extractModuleName(requirement);
-        List<TableSchema> tables = generateTables(moduleCode, request);
-
-        ModuleDesign design = new ModuleDesign();
-        design.setModuleName(moduleName);
-        design.setModuleCode(moduleCode);
-        design.setDescription(requirement);
-        design.setProjectId(resolveProjectId(request.getProjectId()));
-        design.setModelConfigId(request.getModelConfigId());
-        design.setTables(tables);
-        design.setPages(generatePages(moduleCode, moduleName, request, tables));
-        design.setApis(generateApis(moduleCode, request));
-        design.setPermissions(generatePermissions(moduleCode, moduleName, request));
-        design.setMenus(generateMenus(moduleCode, moduleName));
-        return design;
+        throw new IllegalStateException("AI 需求分析失败，请检查模型配置、API Key、模型接口和返回 JSON 格式");
     }
 
     @Override
@@ -115,8 +94,7 @@ public class AiEngineServiceImpl implements AiEngineService {
         if (StringUtils.hasText(aiResult)) {
             return aiResult;
         }
-        operationLogService.log("AI_OPTIMIZE_FALLBACK", null, resolveProjectId(request.getProjectId()), "WARN", "模型优化不可用，已使用平台模板优化需求");
-        return optimizeRequirementByTemplate(request);
+        throw new IllegalStateException("AI 需求优化失败，请检查模型配置、API Key 和模型接口");
     }
 
     private String optimizeRequirementWithConfiguredModel(RequirementRequest request) {
@@ -166,40 +144,6 @@ public class AiEngineServiceImpl implements AiEngineService {
                 只能描述当前平台内业务功能模块，禁止要求生成完整系统、登录系统、权限系统或外部项目。
                 如果原需求缺少信息，用“待确认：...”列出，不能凭空确定。
                 """;
-    }
-
-    private String optimizeRequirementByTemplate(RequirementRequest request) {
-        String requirement = Objects.toString(request.getRequirement(), "").trim();
-        String moduleName = extractModuleName(requirement);
-        List<String> sections = new ArrayList<>();
-        sections.add("业务目标：在当前 BizAgent 平台内生成「" + moduleName + "」业务模块，不生成独立系统。");
-        sections.add("原始需求：" + requirement);
-        sections.add("核心功能：列表查询、新增、编辑、详情、删除，并接入平台菜单、权限、用户和项目体系。");
-        sections.add("数据规范：生成业务表结构，包含 id、create_by、create_time、update_by、update_time、del_flag、project_id 等通用字段。");
-        sections.add("权限规范：生成查看、新增、编辑、删除等权限点，权限编码采用 模块:操作 格式。");
-        if (Boolean.TRUE.equals(request.getNeedApproval())) {
-            sections.add("审批流程：需要提交审批、审批处理、审批记录和状态流转。");
-        } else {
-            sections.add("待确认：是否需要审批流程及审批节点。");
-        }
-        if (Boolean.TRUE.equals(request.getNeedImportExport())) {
-            sections.add("导入导出：需要支持数据导入和导出。");
-        } else {
-            sections.add("待确认：是否需要 Excel 导入导出。");
-        }
-        if (Boolean.TRUE.equals(request.getNeedStatistics())) {
-            sections.add("统计分析：需要按状态、日期、负责人等维度提供统计。");
-        } else {
-            sections.add("待确认：是否需要统计看板和统计维度。");
-        }
-        if (Boolean.TRUE.equals(request.getNeedMobile())) {
-            sections.add("移动端：需要生成移动端适配页面。");
-        }
-        if (Boolean.TRUE.equals(request.getNeedNotification())) {
-            sections.add("消息提醒：需要在关键状态变化时提供消息提醒能力。");
-        }
-        sections.add("待确认：核心字段、字段类型、必填规则、枚举值、角色权限范围。");
-        return String.join("\n", sections);
     }
 
     private ModuleDesign analyzeWithConfiguredModel(RequirementRequest request) {
@@ -279,36 +223,34 @@ public class AiEngineServiceImpl implements AiEngineService {
     }
 
     private void normalizeAiDesign(ModuleDesign design, RequirementRequest request) {
-        design.setModuleCode(sanitizeModuleCode(design.getModuleCode()));
-        if (!StringUtils.hasText(design.getModuleName())) {
-            design.setModuleName(extractModuleName(Objects.toString(request.getRequirement(), "")));
+        if (!StringUtils.hasText(design.getModuleCode())) {
+            throw new IllegalArgumentException("AI 生成的模块设计缺少 moduleCode");
         }
+        if (!StringUtils.hasText(design.getModuleName())) {
+            throw new IllegalArgumentException("AI 生成的模块设计缺少 moduleName");
+        }
+        design.setModuleCode(sanitizeModuleCode(design.getModuleCode()));
         if (!StringUtils.hasText(design.getDescription())) {
             design.setDescription(request.getRequirement());
         }
         design.setProjectId(resolveProjectId(request.getProjectId()));
         design.setModelConfigId(request.getModelConfigId());
         if (design.getTables() == null || design.getTables().isEmpty()) {
-            design.setTables(generateTables(design.getModuleCode(), request));
-        } else {
-            mergeTables(design.getTables(), generateTables(design.getModuleCode(), request));
+            throw new IllegalArgumentException("AI 生成的模块设计缺少 tables");
         }
         if (design.getPages() == null || design.getPages().isEmpty()) {
-            design.setPages(generatePages(design.getModuleCode(), design.getModuleName(), request, design.getTables()));
+            throw new IllegalArgumentException("AI 生成的模块设计缺少 pages");
         }
         if (design.getApis() == null || design.getApis().isEmpty()) {
-            design.setApis(generateApis(design.getModuleCode(), request));
-        } else {
-            mergeApis(design.getApis(), generateApis(design.getModuleCode(), request));
+            throw new IllegalArgumentException("AI 生成的模块设计缺少 apis");
         }
         if (design.getPermissions() == null || design.getPermissions().isEmpty()) {
-            design.setPermissions(generatePermissions(design.getModuleCode(), design.getModuleName(), request));
-        } else {
-            mergePermissions(design.getPermissions(), generatePermissions(design.getModuleCode(), design.getModuleName(), request));
+            throw new IllegalArgumentException("AI 生成的模块设计缺少 permissions");
         }
         if (design.getMenus() == null || design.getMenus().isEmpty()) {
-            design.setMenus(generateMenus(design.getModuleCode(), design.getModuleName()));
+            throw new IllegalArgumentException("AI 生成的模块设计缺少 menus");
         }
+        normalizeGeneratedDesign(design);
     }
 
     private void mergeApis(List<ApiSchema> target, List<ApiSchema> required) {
@@ -646,63 +588,148 @@ public class AiEngineServiceImpl implements AiEngineService {
     @Override
     public String generateFrontendCode(ModuleDesign design) {
         validateDesign(design);
-        StringBuilder allCode = new StringBuilder();
-        allCode.append("// ========== List.vue ==========\n");
-        allCode.append(moduleListVue(design));
-        allCode.append("\n// ========== Form.vue ==========\n");
-        allCode.append(moduleFormVue(design));
-        allCode.append("\n// ========== Detail.vue ==========\n");
-        allCode.append(moduleDetailVue(design));
-        return allCode.toString();
+        String aiCode = generateByAi(design, "FRONTEND", frontendCodePrompt(), designPrompt(design));
+        if (StringUtils.hasText(aiCode)) {
+            return aiCode;
+        }
+        throw new IllegalStateException("AI 前端代码生成失败，请检查模型配置和模型输出");
     }
 
     @Override
     public String generateBackendCode(ModuleDesign design) {
         validateDesign(design);
-        String className = upperCamel(design.getModuleCode());
-        StringBuilder allCode = new StringBuilder();
-        allCode.append("// ========== Entity ==========\n");
-        allCode.append(moduleEntity(design));
-        allCode.append("\n// ========== Mapper ==========\n");
-        allCode.append(moduleMapper(design));
-        allCode.append("\n// ========== Service ==========\n");
-        allCode.append(moduleService(design));
-        allCode.append("\n// ========== Controller ==========\n");
-        allCode.append(moduleController(design));
-        return allCode.toString();
+        String aiCode = generateByAi(design, "BACKEND", backendCodePrompt(), designPrompt(design));
+        if (StringUtils.hasText(aiCode)) {
+            return aiCode;
+        }
+        throw new IllegalStateException("AI 后端代码生成失败，请检查模型配置和模型输出");
     }
 
     @Override
     public String generateSqlScript(ModuleDesign design) {
         validateDesign(design);
-        StringBuilder script = new StringBuilder();
-        for (TableSchema table : design.getTables()) {
-            script.append("CREATE TABLE IF NOT EXISTS ").append(table.getTableName()).append(" (\n");
-            for (ColumnSchema column : table.getColumns()) {
-                script.append("    ").append(column.getColumnName()).append(" ").append(column.getDataType());
-                if (Boolean.TRUE.equals(column.getPrimaryKey())) {
-                    script.append(" AUTO_INCREMENT PRIMARY KEY");
-                } else {
-                    if (!Boolean.TRUE.equals(column.getNullable())) {
-                        script.append(" NOT NULL");
-                    }
-                    String defaultValue = safeDefaultValue(column.getDefaultValue());
-                    if (defaultValue != null) {
-                        script.append(" DEFAULT ").append(defaultValue);
-                    }
-                }
-                script.append(" COMMENT '").append(escapeSql(column.getComment())).append("',\n");
-            }
-            script.append("    create_by BIGINT COMMENT '创建人',\n");
-            script.append("    create_time DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',\n");
-            script.append("    update_by BIGINT COMMENT '更新人',\n");
-            script.append("    update_time DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',\n");
-            script.append("    del_flag INT DEFAULT 0 COMMENT '删除标识',\n");
-            script.append("    project_id BIGINT NOT NULL DEFAULT ").append(resolveProjectId(design.getProjectId())).append(" COMMENT '项目ID'\n");
-            script.append(") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='")
-                    .append(escapeSql(table.getTableComment())).append("';\n\n");
+        String aiSql = generateByAi(design, "SQL", sqlCodePrompt(), designPrompt(design));
+        if (StringUtils.hasText(aiSql)) {
+            return ensureSqlScriptTerminated(aiSql);
         }
-        return script.toString();
+        throw new IllegalStateException("AI SQL 生成失败，请检查模型配置和模型输出");
+    }
+
+    private String generateByAi(ModuleDesign design, String scene, String systemPrompt, String userPrompt) {
+        SysModelConfig config = design.getModelConfigId() != null
+                ? sysModelConfigService.getById(design.getModelConfigId())
+                : sysModelConfigService.getActiveDefault();
+        if (config == null || !StringUtils.hasText(config.getApiKey()) || "******".equals(config.getApiKey())) {
+            return "";
+        }
+        String baseUrl = StringUtils.hasText(config.getBaseUrl()) ? config.getBaseUrl() : "https://api.openai.com/v1";
+        String endpoint = baseUrl.replaceAll("/+$", "") + "/chat/completions";
+        try {
+            Map<String, Object> payload = Map.of(
+                    "model", config.getModelName(),
+                    "temperature", config.getTemperature() == null ? 0.2 : config.getTemperature(),
+                    "max_tokens", Math.min(config.getMaxTokens() == null ? 8192 : config.getMaxTokens(), 12000),
+                    "messages", List.of(
+                            Map.of("role", "system", "content", systemPrompt),
+                            Map.of("role", "user", "content", userPrompt)
+                    )
+            );
+            HttpRequest httpRequest = HttpRequest.newBuilder(URI.create(endpoint))
+                    .timeout(Duration.ofSeconds(config.getTimeoutSeconds() == null ? 90 : config.getTimeoutSeconds()))
+                    .header("Content-Type", "application/json")
+                    .header("Authorization", "Bearer " + config.getApiKey())
+                    .POST(HttpRequest.BodyPublishers.ofString(objectMapper.writeValueAsString(payload), StandardCharsets.UTF_8))
+                    .build();
+            HttpResponse<String> response = httpClient.send(httpRequest, HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8));
+            if (response.statusCode() < 200 || response.statusCode() >= 300) {
+                operationLogService.log("AI_GENERATE_" + scene, design.getModuleCode(), resolveProjectId(design.getProjectId()), "FAILED", "模型接口返回状态码: " + response.statusCode());
+                return "";
+            }
+            JsonNode root = objectMapper.readTree(response.body());
+            String content = root.path("choices").path(0).path("message").path("content").asText("").trim();
+            return stripCodeFence(content).trim();
+        } catch (Exception e) {
+            operationLogService.log("AI_GENERATE_" + scene, design.getModuleCode(), resolveProjectId(design.getProjectId()), "FAILED", e.getMessage());
+            return "";
+        }
+    }
+
+    private String designPrompt(ModuleDesign design) {
+        try {
+            return "请基于以下 ModuleDesign 生成代码。ModuleDesign JSON：\n" + objectMapper.writeValueAsString(design);
+        } catch (Exception e) {
+            return "请基于模块编码 " + design.getModuleCode() + " 和模块名称 " + design.getModuleName() + " 生成代码。";
+        }
+    }
+
+    private String frontendCodePrompt() {
+        return """
+                你是 BizAgent 平台的 Vue3 + Element Plus 前端代码生成器。
+                必须基于输入的 ModuleDesign 生成真实可用的模块前端代码，不要复述需求。
+                只输出代码文本，不要 Markdown，不要解释。
+                输出格式必须分段包含：
+                // ========== api.js ==========
+                // ========== List.vue ==========
+                // ========== Form.vue ==========
+                // ========== Detail.vue ==========
+                如果 ModuleDesign 包含 statistics/approval/mobile 页面，也继续输出对应 Vue 文件分段。
+                代码要求：
+                1. 使用 Vue3 script setup 和 Element Plus。
+                2. api.js 从 ../../api 导入 request，并请求 /biz/{moduleCode} 系列接口。
+                3. 表格、表单、详情字段必须来自主表字段，排除 id/create_by/create_time/update_by/update_time/del_flag/project_id 等系统字段。
+                4. 必填、日期、数字、下拉、textarea 控件要按字段类型生成。
+                5. 不生成登录、权限系统、独立项目或新的基础架构。
+                """;
+    }
+
+    private String backendCodePrompt() {
+        return """
+                你是 BizAgent 平台的 Spring Boot 3 + MyBatis Plus 后端代码生成器。
+                必须基于输入的 ModuleDesign 生成模块后端草案代码，不要复述需求。
+                只输出代码文本，不要 Markdown，不要解释。
+                输出格式必须分段包含：
+                // ========== Entity ==========
+                // ========== Mapper ==========
+                // ========== Service ==========
+                // ========== Controller ==========
+                代码要求：
+                1. package 使用 com.example.bizagent.modules.{moduleCode}.*
+                2. Entity 使用 @TableName 指向主业务表，包含主表业务字段和 id/createBy/createTime/updateBy/updateTime/delFlag/projectId。
+                3. Controller 路径使用 /api/biz/{moduleCode}，提供 list/detail/create/update/delete。
+                4. 查询必须过滤 delFlag=0 和 projectId，删除优先软删除。
+                5. 不生成登录、权限系统、独立项目或新的基础架构。
+                """;
+    }
+
+    private String sqlCodePrompt() {
+        return """
+                你是 BizAgent 平台的 MySQL 8 SQL 生成器。
+                必须基于输入的 ModuleDesign 生成可执行 SQL，不要复述需求。
+                只输出 SQL，不要 Markdown，不要解释。
+                SQL 要求：
+                1. 每张表使用 CREATE TABLE IF NOT EXISTS。
+                2. 表名必须严格来自 ModuleDesign，不得新增系统表。
+                3. 每张业务表必须包含 id BIGINT AUTO_INCREMENT PRIMARY KEY。
+                4. 每张业务表必须包含 create_by、create_time、update_by、update_time、del_flag、project_id。
+                5. 使用 ENGINE=InnoDB DEFAULT CHARSET=utf8mb4，中文 COMMENT 必须保留。
+                6. 禁止 DROP、TRUNCATE、DELETE、UPDATE、ALTER 系统表。
+                """;
+    }
+
+    private String stripCodeFence(String content) {
+        String text = Objects.toString(content, "").trim();
+        if (text.startsWith("```")) {
+            text = text.replaceFirst("^```[a-zA-Z0-9_-]*\\s*", "").replaceFirst("\\s*```$", "").trim();
+        }
+        return text;
+    }
+
+    private String ensureSqlScriptTerminated(String sql) {
+        String trimmed = sql.trim();
+        if (trimmed.isEmpty() || trimmed.endsWith(";")) {
+            return trimmed;
+        }
+        return trimmed + ";";
     }
 
     @Override
@@ -923,24 +950,51 @@ public class AiEngineServiceImpl implements AiEngineService {
             Files.createDirectories(backServiceDir);
             Files.createDirectories(backControllerDir);
 
+            String frontendCode = generateFrontendCode(design);
+            String backendCode = generateBackendCode(design);
+            String sqlScript = generateSqlScript(design);
+
             write(frontDir.resolve("module.json"), objectMapper.writeValueAsString(design));
             write(frontDir.resolve("menus.json"), objectMapper.writeValueAsString(design.getMenus()));
             write(frontDir.resolve("permissions.json"), objectMapper.writeValueAsString(design.getPermissions()));
             write(frontDir.resolve("routes.json"), objectMapper.writeValueAsString(design.getPages()));
-            write(frontDir.resolve("api.js"), moduleApiJs(design));
-            write(frontDir.resolve("List.vue"), moduleListVue(design));
-            write(frontDir.resolve("Form.vue"), moduleFormVue(design));
-            write(frontDir.resolve("Detail.vue"), moduleDetailVue(design));
+            write(frontDir.resolve("api.js"), requiredGeneratedSection(frontendCode, "api.js"));
+            write(frontDir.resolve("List.vue"), requiredGeneratedSection(frontendCode, "List.vue"));
+            write(frontDir.resolve("Form.vue"), requiredGeneratedSection(frontendCode, "Form.vue"));
+            write(frontDir.resolve("Detail.vue"), requiredGeneratedSection(frontendCode, "Detail.vue"));
+            write(frontDir.resolve("generated-frontend.txt"), frontendCode);
 
             write(backDir.resolve("module.json"), objectMapper.writeValueAsString(design));
-            write(backDir.resolve("init.sql"), generateSqlScript(design));
-            write(backEntityDir.resolve(upperCamel(design.getModuleCode()) + "Entity.java"), moduleEntity(design));
-            write(backMapperDir.resolve(upperCamel(design.getModuleCode()) + "Mapper.java"), moduleMapper(design));
-            write(backServiceDir.resolve(upperCamel(design.getModuleCode()) + "Service.java"), moduleService(design));
-            write(backControllerDir.resolve(upperCamel(design.getModuleCode()) + "Controller.java"), moduleController(design));
+            write(backDir.resolve("init.sql"), sqlScript);
+            write(backDir.resolve("generated-backend.txt"), backendCode);
+            write(backEntityDir.resolve(upperCamel(design.getModuleCode()) + "Entity.java"), requiredGeneratedSection(backendCode, "Entity"));
+            write(backMapperDir.resolve(upperCamel(design.getModuleCode()) + "Mapper.java"), requiredGeneratedSection(backendCode, "Mapper"));
+            write(backServiceDir.resolve(upperCamel(design.getModuleCode()) + "Service.java"), requiredGeneratedSection(backendCode, "Service"));
+            write(backControllerDir.resolve(upperCamel(design.getModuleCode()) + "Controller.java"), requiredGeneratedSection(backendCode, "Controller"));
         } catch (Exception e) {
             throw new IllegalStateException("模块文件生成失败: " + e.getMessage(), e);
         }
+    }
+
+    private String requiredGeneratedSection(String generatedCode, String sectionName) {
+        String section = extractGeneratedSection(generatedCode, sectionName);
+        if (!StringUtils.hasText(section)) {
+            throw new IllegalStateException("AI 生成结果缺少分段: " + sectionName);
+        }
+        return section;
+    }
+
+    private String extractGeneratedSection(String generatedCode, String sectionName) {
+        String marker = "// ========== " + sectionName + " ==========";
+        String text = Objects.toString(generatedCode, "");
+        int start = text.indexOf(marker);
+        if (start < 0) {
+            return "";
+        }
+        int contentStart = start + marker.length();
+        int next = text.indexOf("// ==========", contentStart);
+        String section = next >= 0 ? text.substring(contentStart, next) : text.substring(contentStart);
+        return stripCodeFence(section).trim();
     }
 
     private Path projectRoot() {
@@ -1321,7 +1375,7 @@ public class AiEngineServiceImpl implements AiEngineService {
             safeTables.add(table);
         }
         design.setTables(safeTables);
-        ensureRuntimeMetadata(design);
+        requireRuntimeMetadata(design);
     }
 
     private List<ColumnSchema> normalizeColumns(List<ColumnSchema> columns) {
@@ -1345,26 +1399,23 @@ public class AiEngineServiceImpl implements AiEngineService {
             safeColumns.put(columnName, column);
         }
         if (safeColumns.size() == 1) {
-            safeColumns.put("name", column("name", "VARCHAR(100)", "名称", false, null));
-            safeColumns.put("status", column("status", "VARCHAR(30)", "状态", false, "'draft'"));
-            safeColumns.put("remark", column("remark", "VARCHAR(500)", "备注", true, null));
+            throw new IllegalArgumentException("AI 生成的业务表缺少业务字段");
         }
         return new ArrayList<>(safeColumns.values());
     }
 
-    private void ensureRuntimeMetadata(ModuleDesign design) {
-        RequirementRequest emptyRequest = new RequirementRequest();
+    private void requireRuntimeMetadata(ModuleDesign design) {
         if (design.getPages() == null || design.getPages().isEmpty()) {
-            design.setPages(generatePages(design.getModuleCode(), design.getModuleName(), emptyRequest, design.getTables()));
+            throw new IllegalArgumentException("模块设计缺少页面配置");
         }
         if (design.getApis() == null || design.getApis().isEmpty()) {
-            design.setApis(generateApis(design.getModuleCode(), emptyRequest));
+            throw new IllegalArgumentException("模块设计缺少 API 配置");
         }
         if (design.getPermissions() == null || design.getPermissions().isEmpty()) {
-            design.setPermissions(generatePermissions(design.getModuleCode(), design.getModuleName(), emptyRequest));
+            throw new IllegalArgumentException("模块设计缺少权限配置");
         }
         if (design.getMenus() == null || design.getMenus().isEmpty()) {
-            design.setMenus(generateMenus(design.getModuleCode(), design.getModuleName()));
+            throw new IllegalArgumentException("模块设计缺少菜单配置");
         }
     }
 
