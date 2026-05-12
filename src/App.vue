@@ -17,6 +17,10 @@
             <el-icon><component :is="icons.Rocket" /></el-icon>
             <span>AI生成</span>
           </el-menu-item>
+          <el-menu-item index="/ai/console">
+            <el-icon><component :is="icons.Console" /></el-icon>
+            <span>AI控制台</span>
+          </el-menu-item>
           <template v-if="moduleMenus.length">
             <div class="menu-section">业务模块</div>
             <el-menu-item v-for="item in moduleMenus" :key="item.id" :index="item.path">
@@ -123,7 +127,7 @@
 <script setup>
 import { computed, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { Close, Cpu, Folder, Grid, Key, Management, Menu, Promotion, Setting, User } from '@element-plus/icons-vue'
+import { Close, Cpu, Folder, Grid, Key, Management, Menu, Monitor, Promotion, Setting, User } from '@element-plus/icons-vue'
 import { authApi, menuApi, projectApi } from './api'
 
 const route = useRoute()
@@ -146,11 +150,13 @@ const icons = {
   Project: Folder,
   Module: Grid,
   Model: Cpu,
+  Console: Monitor,
   Close
 }
 
 const titleMap = {
   '/ai/generate': 'AI模块生成',
+  '/ai/console': 'AI开发控制台',
   '/system/user': '用户管理',
   '/system/role': '角色管理',
   '/system/menu': '菜单管理',
@@ -189,7 +195,7 @@ const syncCurrentTab = () => {
     fullPath: route.fullPath,
     path: route.path,
     title: getTabTitle(route),
-    closable: route.path !== '/ai/generate'
+    closable: !['/ai/generate', '/ai/console'].includes(route.path)
   }
   const existingIndex = openTabs.value.findIndex((tab) => tab.fullPath === nextTab.fullPath)
   if (existingIndex >= 0) {

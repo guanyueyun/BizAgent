@@ -41,6 +41,9 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.function.Consumer;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 @Service
 public class AiEngineServiceImpl implements AiEngineService {
@@ -53,6 +56,73 @@ public class AiEngineServiceImpl implements AiEngineService {
     private final DataSource dataSource;
     private final ObjectMapper objectMapper;
     private final HttpClient httpClient;
+    private static final ThreadLocal<Consumer<Map<String, Object>>> AI_TRACE_CONSUMER = new ThreadLocal<>();
+    private static final Set<String> BLOCKED_CORE_TABLES = Set.of("sys_user", "sys_role", "sys_menu", "sys_permission", "sys_project");
+    private static final List<String> DEFAULT_SKILLS = List.of(
+            "requirement-analysis-skill",
+            "module-design-skill",
+            "vue-page-generate-skill",
+            "springboot-api-generate-skill",
+            "sql-generate-skill",
+            "permission-menu-skill",
+            "code-review-skill",
+            "security-check-skill",
+            "repair-skill"
+    );
+    private static final List<String> DEFAULT_FEATURE_FLAGS = List.of(
+            "agentLoop.enabled",
+            "generation.plan.required",
+            "generation.check.required",
+            "generation.confirmBeforePublish",
+            "generation.securityScan.enabled",
+            "generation.whitelistDirectories.enabled"
+    );
+    private static final List<String> BLOCKED_FILE_PATTERNS = List.of(
+            "src/App.vue",
+            "src/main.js",
+            "src/router/index.js",
+            "server/src/main/resources/application",
+            "server/src/main/java/com/example/bizagent/config/",
+            "server/src/main/java/com/example/bizagent/common/auth/",
+            "server/src/main/java/com/example/bizagent/modules/system/"
+    );
+
+    public static void setAiTraceConsumer(Consumer<Map<String, Object>> consumer) {
+        AI_TRACE_CONSUMER.set(consumer);
+    }
+
+    public static void clearAiTraceConsumer() {
+        AI_TRACE_CONSUMER.remove();
+    }
+    private static final List<String> DANGEROUS_CODE_PATTERNS = List.of(
+            "Runtime.getRuntime()",
+            "ProcessBuilder",
+            "exec(",
+            "setAccessible(true)",
+            "Class.forName(",
+            "Files.write",
+            "FileOutputStream",
+            "URLClassLoader",
+            "curl ",
+            "wget ",
+            "apiKey =",
+            "password ="
+    );
+
+    private record AiTask(
+            String scene,
+            Long projectId,
+            String moduleCode,
+            Long modelConfigId,
+            String systemPrompt,
+            String userPrompt,
+            double defaultTemperature,
+            int defaultMaxTokens,
+            int maxTokenLimit,
+            int defaultTimeoutSeconds,
+            boolean failFast
+    ) {
+    }
 
     public AiEngineServiceImpl(SysModuleService sysModuleService,
                                SysMenuService sysMenuService,
@@ -67,7 +137,10 @@ public class AiEngineServiceImpl implements AiEngineService {
         this.operationLogService = operationLogService;
         this.dataSource = dataSource;
         this.objectMapper = new ObjectMapper().enable(SerializationFeature.INDENT_OUTPUT);
-        this.httpClient = HttpClient.newHttpClient();
+        this.httpClient = HttpClient.newBuilder()
+                .version(HttpClient.Version.HTTP_1_1)
+                .connectTimeout(Duration.ofSeconds(20))
+                .build();
     }
 
     @Override
@@ -81,7 +154,35 @@ public class AiEngineServiceImpl implements AiEngineService {
             normalizeAiDesign(aiDesign, request);
             return aiDesign;
         }
-        throw new IllegalStateException("AI 需求分析失败，请检查模型配置、API Key、模型接口和返回 JSON 格式");
+        throw new IllegalStateException("AI 需求分析失败：模型未返回有效内容");
+    }
+
+    @Override
+    public GenerationPlan planGeneration(RequirementRequest request) {
+        ModuleDesign design = analyzeRequirement(request);
+        GenerationPlan plan = new GenerationPlan();
+        plan.setModuleName(design.getModuleName());
+        plan.setModuleCode(design.getModuleCode());
+        plan.setRequirementSummary(design.getDescription());
+        plan.setDesign(design);
+        plan.setPages(design.getPages().stream()
+                .map(page -> page.getPageName() + " " + page.getPath())
+                .toList());
+        plan.setApis(design.getApis().stream()
+                .map(api -> api.getMethod() + " " + api.getPath())
+                .toList());
+        plan.setTables(design.getTables().stream()
+                .map(TableSchema::getTableName)
+                .toList());
+        plan.setPermissions(design.getPermissions().stream()
+                .map(PermissionSchema::getPermissionCode)
+                .toList());
+        plan.setPlannedFiles(plannedFiles(design.getModuleCode()));
+        plan.setRisks(planRisks(design, request));
+        plan.setSkills(DEFAULT_SKILLS);
+        plan.setFeatureFlags(DEFAULT_FEATURE_FLAGS);
+        operationLogService.log("AI_PLAN_MODEL", design.getModuleCode(), design.getProjectId(), "SUCCESS", "Plan 阶段完成");
+        return plan;
     }
 
     @Override
@@ -98,37 +199,20 @@ public class AiEngineServiceImpl implements AiEngineService {
     }
 
     private String optimizeRequirementWithConfiguredModel(RequirementRequest request) {
-        SysModelConfig config = request.getModelConfigId() != null
-                ? sysModelConfigService.getById(request.getModelConfigId())
-                : sysModelConfigService.getActiveDefault();
-        if (config == null || !StringUtils.hasText(config.getApiKey()) || "******".equals(config.getApiKey())) {
-            return "";
-        }
-        String baseUrl = StringUtils.hasText(config.getBaseUrl()) ? config.getBaseUrl() : "https://api.openai.com/v1";
-        String endpoint = baseUrl.replaceAll("/+$", "") + "/chat/completions";
         try {
-            Map<String, Object> payload = Map.of(
-                    "model", config.getModelName(),
-                    "temperature", config.getTemperature() == null ? 0.3 : config.getTemperature(),
-                    "max_tokens", Math.min(config.getMaxTokens() == null ? 2048 : config.getMaxTokens(), 4096),
-                    "messages", List.of(
-                            Map.of("role", "system", "content", requirementOptimizePrompt()),
-                            Map.of("role", "user", "content", objectMapper.writeValueAsString(request))
-                    )
-            );
-            HttpRequest httpRequest = HttpRequest.newBuilder(URI.create(endpoint))
-                    .timeout(Duration.ofSeconds(config.getTimeoutSeconds() == null ? 60 : config.getTimeoutSeconds()))
-                    .header("Content-Type", "application/json")
-                    .header("Authorization", "Bearer " + config.getApiKey())
-                    .POST(HttpRequest.BodyPublishers.ofString(objectMapper.writeValueAsString(payload), StandardCharsets.UTF_8))
-                    .build();
-            HttpResponse<String> response = httpClient.send(httpRequest, HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8));
-            if (response.statusCode() < 200 || response.statusCode() >= 300) {
-                operationLogService.log("AI_OPTIMIZE_MODEL", null, resolveProjectId(request.getProjectId()), "FAILED", "模型接口返回状态码: " + response.statusCode());
-                return "";
-            }
-            JsonNode root = objectMapper.readTree(response.body());
-            return root.path("choices").path(0).path("message").path("content").asText("").trim();
+            return executeAiTask(new AiTask(
+                    "AI_OPTIMIZE_MODEL",
+                    resolveProjectId(request.getProjectId()),
+                    null,
+                    request.getModelConfigId(),
+                    requirementOptimizePrompt(),
+                    objectMapper.writeValueAsString(request),
+                    0.3,
+                    2048,
+                    4096,
+                    60,
+                    false
+            )).trim();
         } catch (Exception e) {
             operationLogService.log("AI_OPTIMIZE_MODEL", null, resolveProjectId(request.getProjectId()), "FAILED", e.getMessage());
             return "";
@@ -158,47 +242,43 @@ public class AiEngineServiceImpl implements AiEngineService {
                 """;
     }
 
+    private String assistantContext(RequirementRequest request) {
+        return """
+                已启用 Agent 辅助：%s
+                已启用工具辅助：%s
+                请把这些辅助能力体现在需求拆解、模块设计、页面、接口、权限、SQL 和代码质量约束中。
+                """.formatted(
+                String.join("、", Objects.requireNonNullElse(request.getAgentAssistants(), List.of("businessAnalyst", "dataArchitect", "frontendEngineer", "backendEngineer", "qaReviewer"))),
+                String.join("、", Objects.requireNonNullElse(request.getToolAssistants(), List.of("schemaDesigner", "apiPlanner", "uiBuilder", "permissionMatrix")))
+        );
+    }
+
     private ModuleDesign analyzeWithConfiguredModel(RequirementRequest request) {
-        SysModelConfig config = request.getModelConfigId() != null
-                ? sysModelConfigService.getById(request.getModelConfigId())
-                : sysModelConfigService.getActiveDefault();
-        if (config == null || !StringUtils.hasText(config.getApiKey()) || "******".equals(config.getApiKey())) {
-            return null;
-        }
-        String baseUrl = StringUtils.hasText(config.getBaseUrl()) ? config.getBaseUrl() : "https://api.openai.com/v1";
-        String endpoint = baseUrl.replaceAll("/+$", "") + "/chat/completions";
         try {
-            Map<String, Object> payload = Map.of(
-                    "model", config.getModelName(),
-                    "temperature", config.getTemperature() == null ? 0.2 : config.getTemperature(),
-                    "max_tokens", config.getMaxTokens() == null ? 4096 : config.getMaxTokens(),
-                    "messages", List.of(
-                            Map.of("role", "system", "content", systemPrompt()),
-                            Map.of("role", "user", "content", userPrompt(request))
-                    )
-            );
-            HttpRequest httpRequest = HttpRequest.newBuilder(URI.create(endpoint))
-                    .timeout(Duration.ofSeconds(config.getTimeoutSeconds() == null ? 60 : config.getTimeoutSeconds()))
-                    .header("Content-Type", "application/json")
-                    .header("Authorization", "Bearer " + config.getApiKey())
-                    .POST(HttpRequest.BodyPublishers.ofString(objectMapper.writeValueAsString(payload), StandardCharsets.UTF_8))
-                    .build();
-            HttpResponse<String> response = httpClient.send(httpRequest, HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8));
-            if (response.statusCode() < 200 || response.statusCode() >= 300) {
-                operationLogService.log("AI_ANALYZE_MODEL", null, resolveProjectId(request.getProjectId()), "FAILED", "模型接口返回状态码: " + response.statusCode());
-                return null;
+            String content = executeAiTask(new AiTask(
+                    "AI_ANALYZE_MODEL",
+                    resolveProjectId(request.getProjectId()),
+                    null,
+                    request.getModelConfigId(),
+                    systemPrompt(),
+                    userPrompt(request),
+                    0.2,
+                    4096,
+                    0,
+                    60,
+                    false
+            ));
+            if (!StringUtils.hasText(content)) {
+                throw new IllegalStateException("模型返回内容为空，请检查模型配置、API Key 或模型响应格式");
             }
-            JsonNode root = objectMapper.readTree(response.body());
-            String content = root.path("choices").path(0).path("message").path("content").asText("");
             String json = extractJsonObject(content);
             if (!StringUtils.hasText(json)) {
-                operationLogService.log("AI_ANALYZE_MODEL", null, resolveProjectId(request.getProjectId()), "FAILED", "模型未返回可解析的模块设计 JSON");
-                return null;
+                throw new IllegalStateException("模型未返回可解析的 ModuleDesign JSON，响应摘要：" + summarize(content));
             }
             return objectMapper.readValue(json, ModuleDesign.class);
         } catch (Exception e) {
             operationLogService.log("AI_ANALYZE_MODEL", null, resolveProjectId(request.getProjectId()), "FAILED", e.getMessage());
-            return null;
+            throw new IllegalStateException("AI 需求分析失败：" + e.getMessage(), e);
         }
     }
 
@@ -271,6 +351,13 @@ public class AiEngineServiceImpl implements AiEngineService {
                 1. 需求越简单，也要生成完整可运行模块设计。
                 2. 不要遗漏 pages/apis/permissions/menus 的联动。
                 3. 不要输出 Markdown 代码块。
+
+                十、Agent 协同要求
+                1. businessAnalyst 负责补齐业务目标、流程、状态和待确认项。
+                2. dataArchitect 负责表、字段、类型、索引和项目隔离字段的合理性。
+                3. frontendEngineer 负责列表、表单、详情、移动端和统计页面可用性。
+                4. backendEngineer 负责 API、权限编码、导入导出、审批和消息接口闭环。
+                5. qaReviewer/securityReviewer 负责校验必填、枚举、软删除、数据范围和危险 SQL 边界。
                 """;
     }
 
@@ -278,9 +365,10 @@ public class AiEngineServiceImpl implements AiEngineService {
         return """
                 请根据以下 RequirementRequest 生成平台业务模块设计 JSON。
                 needApproval/needMobile/needImportExport/needStatistics/needNotification 为 true 时，必须在 tables、pages、apis、permissions 中体现对应能力。
+                %s
                 输出必须能被 Java ObjectMapper 直接解析为 ModuleDesign。
                 RequirementRequest JSON：
-                """ + objectMapper.writeValueAsString(request);
+                """.formatted(assistantContext(request)) + objectMapper.writeValueAsString(request);
     }
 
     private String extractJsonObject(String content) {
@@ -374,7 +462,56 @@ public class AiEngineServiceImpl implements AiEngineService {
         if (!requirement.contains("权限")) {
             questions.add("哪些角色可以查看、新增、编辑、删除、审批或导出这个模块的数据？");
         }
+        if (request.getAgentAssistants() != null && request.getAgentAssistants().contains("securityReviewer")
+                && !requirement.contains("数据范围")) {
+            questions.add("是否存在数据范围限制？例如本人、部门、项目或指定角色可见。");
+        }
+        if (request.getToolAssistants() != null && request.getToolAssistants().contains("validationRules")
+                && !requirement.contains("校验")) {
+            questions.add("关键字段有哪些校验规则？例如唯一、必填、长度、金额范围或时间先后关系。");
+        }
         return questions.stream().limit(5).toList();
+    }
+
+    private List<String> plannedFiles(String moduleCode) {
+        String frontRoot = "src/modules/" + moduleCode;
+        String backRoot = "server/modules/" + moduleCode;
+        return List.of(
+                frontRoot + "/module.json",
+                frontRoot + "/menus.json",
+                frontRoot + "/permissions.json",
+                frontRoot + "/routes.json",
+                frontRoot + "/api.js",
+                frontRoot + "/List.vue",
+                frontRoot + "/Form.vue",
+                frontRoot + "/Detail.vue",
+                backRoot + "/module.json",
+                backRoot + "/init.sql",
+                backRoot + "/entity/" + upperCamel(moduleCode) + "Entity.java",
+                backRoot + "/mapper/" + upperCamel(moduleCode) + "Mapper.java",
+                backRoot + "/service/" + upperCamel(moduleCode) + "Service.java",
+                backRoot + "/controller/" + upperCamel(moduleCode) + "Controller.java"
+        );
+    }
+
+    private List<String> planRisks(ModuleDesign design, RequirementRequest request) {
+        List<String> risks = new ArrayList<>();
+        if (Boolean.TRUE.equals(request.getNeedApproval())) {
+            risks.add("审批能力需要校验状态流转、按钮权限和接口权限是否闭环。");
+        }
+        if (Boolean.TRUE.equals(request.getNeedImportExport())) {
+            risks.add("导入导出需要校验字段白名单、数据范围和大批量处理边界。");
+        }
+        if (Boolean.TRUE.equals(request.getNeedStatistics())) {
+            risks.add("统计页面需要校验查询条件、项目隔离和聚合性能。");
+        }
+        if (design.getTables().stream().anyMatch(table -> table.getColumns().size() > 20)) {
+            risks.add("业务字段较多，前端表单需要分组或折叠以保证可用性。");
+        }
+        if (risks.isEmpty()) {
+            risks.add("常规风险：权限编码、项目隔离、SQL 安全和生成文件白名单必须通过发布前检查。");
+        }
+        return risks;
     }
 
     private ColumnSchema column(String name, String type, String comment, boolean nullable, String defaultValue) {
@@ -404,7 +541,7 @@ public class AiEngineServiceImpl implements AiEngineService {
         validateDesign(design);
         String aiCode = generateByAi(design, "BACKEND", backendCodePrompt(), designPrompt(design));
         if (StringUtils.hasText(aiCode)) {
-            return aiCode;
+            return ensureBackendSections(design, aiCode);
         }
         throw new IllegalStateException("AI 后端代码生成失败，请检查模型配置和模型输出");
     }
@@ -420,42 +557,262 @@ public class AiEngineServiceImpl implements AiEngineService {
     }
 
     private String generateByAi(ModuleDesign design, String scene, String systemPrompt, String userPrompt) {
-        SysModelConfig config = design.getModelConfigId() != null
-                ? sysModelConfigService.getById(design.getModelConfigId())
-                : sysModelConfigService.getActiveDefault();
-        if (config == null || !StringUtils.hasText(config.getApiKey()) || "******".equals(config.getApiKey())) {
-            return "";
+        return executeAiTask(new AiTask(
+                "AI_GENERATE_" + scene,
+                resolveProjectId(design.getProjectId()),
+                design.getModuleCode(),
+                design.getModelConfigId(),
+                systemPrompt,
+                userPrompt,
+                0.2,
+                8192,
+                12000,
+                90,
+                false
+        )).trim();
+    }
+
+    private String ensureBackendSections(ModuleDesign design, String backendCode) {
+        List<String> missing = missingGeneratedSections(backendCode, List.of("Entity", "Mapper", "Service", "Controller"));
+        if (missing.isEmpty()) {
+            return backendCode;
         }
-        String baseUrl = StringUtils.hasText(config.getBaseUrl()) ? config.getBaseUrl() : "https://api.openai.com/v1";
-        String endpoint = baseUrl.replaceAll("/+$", "") + "/chat/completions";
+        String repaired = generateByAi(
+                design,
+                "BACKEND_REPAIR",
+                backendCodePrompt() + "\n\n上一次后端代码输出缺少分段：" + String.join("、", missing)
+                        + "。请基于 ModuleDesign 和上一次输出重新生成完整四段代码，仍然必须按固定分段标题输出。",
+                designPrompt(design) + "\n\n上一次后端代码输出如下，请保留已正确生成的内容并补齐缺失分段：\n" + backendCode
+        );
+        List<String> stillMissing = missingGeneratedSections(repaired, List.of("Entity", "Mapper", "Service", "Controller"));
+        if (!stillMissing.isEmpty()) {
+            throw new IllegalStateException("AI 后端代码生成结果缺少分段: " + String.join("、", stillMissing));
+        }
+        return repaired;
+    }
+
+    private String executeAiTask(AiTask task) {
+        SysModelConfig config = task.modelConfigId() != null
+                ? sysModelConfigService.getById(task.modelConfigId())
+                : sysModelConfigService.getActiveDefault();
+        if (!isUsableModelConfig(config)) {
+            throw new IllegalStateException(modelConfigProblem(config));
+        }
+
+        String endpoint = modelEndpoint(config);
+        int maxAttempts = Math.max(3, (config.getRetryCount() == null ? 0 : config.getRetryCount()) + 1);
+        Exception lastException = null;
+        for (int attempt = 1; attempt <= maxAttempts; attempt++) {
+            try {
+                HttpRequest.Builder builder = HttpRequest.newBuilder(URI.create(endpoint))
+                        .version(HttpClient.Version.HTTP_1_1)
+                        .timeout(Duration.ofSeconds(config.getTimeoutSeconds() == null ? task.defaultTimeoutSeconds() : config.getTimeoutSeconds()))
+                        .header("Content-Type", "application/json");
+                applyModelHeaders(builder, config);
+                HttpRequest httpRequest = builder
+                        .POST(HttpRequest.BodyPublishers.ofString(objectMapper.writeValueAsString(modelPayload(config, task)), StandardCharsets.UTF_8))
+                        .build();
+                emitAiRequestTrace(task, config, endpoint, attempt, maxAttempts);
+                HttpResponse<String> response = httpClient.send(httpRequest, HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8));
+                if (response.statusCode() < 200 || response.statusCode() >= 300) {
+                    String message = "模型接口返回状态码: " + response.statusCode()
+                            + "，尝试次数: " + attempt + "/" + maxAttempts
+                            + "，接口: " + endpoint
+                            + "，响应摘要: " + summarize(response.body());
+                    operationLogService.log(task.scene(), task.moduleCode(), task.projectId(), "FAILED", message);
+                    lastException = new IllegalStateException(message);
+                    continue;
+                }
+                JsonNode root = objectMapper.readTree(response.body());
+                String content = extractModelContent(config, root);
+                if (!StringUtils.hasText(content)) {
+                    String message = "模型响应缺少可读取内容，接口: " + endpoint + "，响应摘要: " + summarize(response.body());
+                    operationLogService.log(task.scene(), task.moduleCode(), task.projectId(), "FAILED", message);
+                    lastException = new IllegalStateException(message);
+                    continue;
+                }
+                String cleanedContent = stripCodeFence(content).trim();
+                emitAiResponseTrace(task, config, endpoint, cleanedContent);
+                return cleanedContent;
+            } catch (Exception e) {
+                lastException = e;
+                String message = "模型调用异常，尝试次数: " + attempt + "/" + maxAttempts
+                        + "，接口: " + endpoint
+                        + "，原因: " + Objects.toString(e.getMessage(), e.getClass().getSimpleName());
+                operationLogService.log(task.scene(), task.moduleCode(), task.projectId(), "FAILED", message);
+                sleepBeforeRetry(attempt, maxAttempts);
+            }
+        }
+        throw new IllegalStateException("AI 任务执行失败: " + (lastException == null ? "未知错误" : lastException.getMessage()), lastException);
+    }
+
+    private void emitAiRequestTrace(AiTask task, SysModelConfig config, String endpoint, int attempt, int maxAttempts) {
+        Consumer<Map<String, Object>> consumer = AI_TRACE_CONSUMER.get();
+        if (consumer == null) {
+            return;
+        }
+        Map<String, Object> trace = new LinkedHashMap<>();
+        trace.put("kind", "request");
+        trace.put("scene", task.scene());
+        trace.put("projectId", task.projectId());
+        trace.put("moduleCode", task.moduleCode());
+        trace.put("provider", config.getProvider());
+        trace.put("modelName", config.getModelName());
+        trace.put("endpoint", endpoint);
+        trace.put("attempt", attempt);
+        trace.put("maxAttempts", maxAttempts);
+        trace.put("messages", List.of(
+                Map.of("role", "system", "content", task.systemPrompt()),
+                Map.of("role", "user", "content", task.userPrompt())
+        ));
+        consumer.accept(trace);
+    }
+
+    private void emitAiResponseTrace(AiTask task, SysModelConfig config, String endpoint, String content) {
+        Consumer<Map<String, Object>> consumer = AI_TRACE_CONSUMER.get();
+        if (consumer == null) {
+            return;
+        }
+        Map<String, Object> trace = new LinkedHashMap<>();
+        trace.put("kind", "response");
+        trace.put("scene", task.scene());
+        trace.put("projectId", task.projectId());
+        trace.put("moduleCode", task.moduleCode());
+        trace.put("provider", config.getProvider());
+        trace.put("modelName", config.getModelName());
+        trace.put("endpoint", endpoint);
+        trace.put("messages", List.of(Map.of("role", "assistant", "content", content)));
+        consumer.accept(trace);
+    }
+
+    private void sleepBeforeRetry(int attempt, int maxAttempts) {
+        if (attempt >= maxAttempts) {
+            return;
+        }
         try {
-            Map<String, Object> payload = Map.of(
+            Thread.sleep(Math.min(3000L, 700L * attempt));
+        } catch (InterruptedException interruptedException) {
+            Thread.currentThread().interrupt();
+        }
+    }
+
+    private String modelConfigProblem(SysModelConfig config) {
+        if (config == null) {
+            return "AI 任务缺少可用模型配置，请先在系统管理/模型配置中启用默认模型";
+        }
+        String provider = Objects.toString(config.getProvider(), "");
+        if (!StringUtils.hasText(config.getModelName())) {
+            return "模型配置缺少 modelName，配置名称: " + Objects.toString(config.getConfigName(), String.valueOf(config.getId()));
+        }
+        if (!provider.toLowerCase(Locale.ROOT).contains("ollama")
+                && (!StringUtils.hasText(config.getApiKey()) || "******".equals(config.getApiKey()))) {
+            return "模型配置缺少真实 API Key，配置名称: " + Objects.toString(config.getConfigName(), String.valueOf(config.getId()))
+                    + "，当前保存值为空或脱敏占位符";
+        }
+        return "模型配置不可用，配置名称: " + Objects.toString(config.getConfigName(), String.valueOf(config.getId()));
+    }
+
+    private String summarize(String text) {
+        String normalized = Objects.toString(text, "")
+                .replaceAll("[\\r\\n\\t]+", " ")
+                .replaceAll("\\s{2,}", " ")
+                .trim();
+        if (normalized.length() > 600) {
+            return normalized.substring(0, 600) + "...";
+        }
+        return normalized;
+    }
+
+    private boolean isUsableModelConfig(SysModelConfig config) {
+        String provider = config == null ? "" : Objects.toString(config.getProvider(), "").toLowerCase(Locale.ROOT);
+        return config != null
+                && StringUtils.hasText(config.getModelName())
+                && (provider.contains("ollama") || StringUtils.hasText(config.getApiKey()))
+                && !"******".equals(config.getApiKey());
+    }
+
+    private String modelEndpoint(SysModelConfig config) {
+        String baseUrl = StringUtils.hasText(config.getBaseUrl()) ? config.getBaseUrl() : "https://api.openai.com/v1";
+        String provider = Objects.toString(config.getProvider(), "").toLowerCase(Locale.ROOT);
+        String normalized = baseUrl.replaceAll("/+$", "");
+        if (provider.contains("ollama")) {
+            return normalized + "/api/chat";
+        }
+        if (provider.contains("claude") || provider.contains("anthropic")) {
+            return normalized.endsWith("/v1") ? normalized + "/messages" : normalized + "/v1/messages";
+        }
+        return normalized.endsWith("/chat/completions") ? normalized : normalized + "/chat/completions";
+    }
+
+    private void applyModelHeaders(HttpRequest.Builder builder, SysModelConfig config) {
+        String provider = Objects.toString(config.getProvider(), "").toLowerCase(Locale.ROOT);
+        if (provider.contains("ollama")) {
+            return;
+        }
+        if (provider.contains("claude") || provider.contains("anthropic")) {
+            builder.header("x-api-key", config.getApiKey());
+            builder.header("anthropic-version", "2023-06-01");
+            return;
+        }
+        builder.header("Authorization", "Bearer " + config.getApiKey());
+    }
+
+    private Map<String, Object> modelPayload(SysModelConfig config, AiTask task) {
+        String provider = Objects.toString(config.getProvider(), "").toLowerCase(Locale.ROOT);
+        double temperature = config.getTemperature() == null ? task.defaultTemperature() : config.getTemperature().doubleValue();
+        int maxTokens = effectiveMaxTokens(config, task.defaultMaxTokens(), task.maxTokenLimit());
+        if (provider.contains("ollama")) {
+            return Map.of(
                     "model", config.getModelName(),
-                    "temperature", config.getTemperature() == null ? 0.2 : config.getTemperature(),
-                    "max_tokens", Math.min(config.getMaxTokens() == null ? 8192 : config.getMaxTokens(), 12000),
+                    "stream", false,
+                    "options", Map.of("temperature", temperature, "num_predict", maxTokens),
                     "messages", List.of(
-                            Map.of("role", "system", "content", systemPrompt),
-                            Map.of("role", "user", "content", userPrompt)
+                            Map.of("role", "system", "content", task.systemPrompt()),
+                            Map.of("role", "user", "content", task.userPrompt())
                     )
             );
-            HttpRequest httpRequest = HttpRequest.newBuilder(URI.create(endpoint))
-                    .timeout(Duration.ofSeconds(config.getTimeoutSeconds() == null ? 90 : config.getTimeoutSeconds()))
-                    .header("Content-Type", "application/json")
-                    .header("Authorization", "Bearer " + config.getApiKey())
-                    .POST(HttpRequest.BodyPublishers.ofString(objectMapper.writeValueAsString(payload), StandardCharsets.UTF_8))
-                    .build();
-            HttpResponse<String> response = httpClient.send(httpRequest, HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8));
-            if (response.statusCode() < 200 || response.statusCode() >= 300) {
-                operationLogService.log("AI_GENERATE_" + scene, design.getModuleCode(), resolveProjectId(design.getProjectId()), "FAILED", "模型接口返回状态码: " + response.statusCode());
-                return "";
-            }
-            JsonNode root = objectMapper.readTree(response.body());
-            String content = root.path("choices").path(0).path("message").path("content").asText("").trim();
-            return stripCodeFence(content).trim();
-        } catch (Exception e) {
-            operationLogService.log("AI_GENERATE_" + scene, design.getModuleCode(), resolveProjectId(design.getProjectId()), "FAILED", e.getMessage());
-            return "";
         }
+        if (provider.contains("claude") || provider.contains("anthropic")) {
+            return Map.of(
+                    "model", config.getModelName(),
+                    "temperature", temperature,
+                    "max_tokens", maxTokens,
+                    "system", task.systemPrompt(),
+                    "messages", List.of(Map.of("role", "user", "content", task.userPrompt()))
+            );
+        }
+        return Map.of(
+                "model", config.getModelName(),
+                "temperature", temperature,
+                "max_tokens", maxTokens,
+                "messages", List.of(
+                        Map.of("role", "system", "content", task.systemPrompt()),
+                        Map.of("role", "user", "content", task.userPrompt())
+                )
+        );
+    }
+
+    private String extractModelContent(SysModelConfig config, JsonNode root) {
+        String provider = Objects.toString(config.getProvider(), "").toLowerCase(Locale.ROOT);
+        if (provider.contains("ollama")) {
+            return root.path("message").path("content").asText("");
+        }
+        if (provider.contains("claude") || provider.contains("anthropic")) {
+            JsonNode content = root.path("content");
+            if (content.isArray() && !content.isEmpty()) {
+                StringBuilder builder = new StringBuilder();
+                for (JsonNode item : content) {
+                    builder.append(item.path("text").asText(""));
+                }
+                return builder.toString();
+            }
+        }
+        return root.path("choices").path(0).path("message").path("content").asText("");
+    }
+
+    private int effectiveMaxTokens(SysModelConfig config, int defaultMaxTokens, int maxTokenLimit) {
+        int configured = config.getMaxTokens() == null ? defaultMaxTokens : config.getMaxTokens();
+        return maxTokenLimit > 0 ? Math.min(configured, maxTokenLimit) : configured;
     }
 
     private String designPrompt(ModuleDesign design) {
@@ -463,12 +820,238 @@ public class AiEngineServiceImpl implements AiEngineService {
             return """
                     请基于以下 ModuleDesign 生成代码。
                     必须严格使用 moduleCode、moduleName、tables、pages、apis、permissions、menus 中的信息。
+                    按照多 Agent 审查标准生成：业务闭环清楚、字段类型合理、前端可操作、后端接口完整、SQL 安全可执行。
+                    工具辅助产物必须体现为：字段校验、权限矩阵、API 调用封装、导入导出/审批/消息/统计等能力入口。
                     不要新增登录、权限系统、平台架构或外部依赖。
                     ModuleDesign JSON：
                     """ + objectMapper.writeValueAsString(design);
         } catch (Exception e) {
             return "请基于模块编码 " + design.getModuleCode() + " 和模块名称 " + design.getModuleName() + " 生成代码。";
         }
+    }
+
+    @Override
+    public ModuleDesign reviseDesign(GenerationRevisionRequest request) {
+        if (request == null || request.getDesign() == null) {
+            throw new IllegalArgumentException("当前生成结果不能为空");
+        }
+        String instruction = Objects.toString(request.getInstruction(), "").trim();
+        if (!StringUtils.hasText(instruction)) {
+            throw new IllegalArgumentException("修改意见不能为空");
+        }
+        try {
+            Long modelConfigId = request.getModelConfigId() != null
+                    ? request.getModelConfigId()
+                    : request.getDesign().getModelConfigId();
+            String content = executeAiTask(new AiTask(
+                    "AI_REVISE_MODEL",
+                    resolveProjectId(request.getProjectId() != null ? request.getProjectId() : request.getDesign().getProjectId()),
+                    request.getDesign().getModuleCode(),
+                    modelConfigId,
+                    revisionPrompt(),
+                    revisionUserPrompt(request),
+                    0.2,
+                    4096,
+                    0,
+                    90,
+                    true
+            ));
+            String json = extractJsonObject(content);
+            if (!StringUtils.hasText(json)) {
+                throw new IllegalStateException("模型未返回可解析的修订后 ModuleDesign JSON");
+            }
+            ModuleDesign revised = objectMapper.readValue(json, ModuleDesign.class);
+            revised.setProjectId(resolveProjectId(request.getProjectId() != null ? request.getProjectId() : request.getDesign().getProjectId()));
+            revised.setModelConfigId(request.getModelConfigId() != null ? request.getModelConfigId() : request.getDesign().getModelConfigId());
+            normalizeAiDesign(revised, revisionAsRequirement(request, instruction));
+            return revised;
+        } catch (RuntimeException e) {
+            operationLogService.log("AI_REVISE_MODEL", request.getDesign().getModuleCode(), resolveProjectId(request.getProjectId()), "FAILED", e.getMessage());
+            throw e;
+        } catch (Exception e) {
+            operationLogService.log("AI_REVISE_MODEL", request.getDesign().getModuleCode(), resolveProjectId(request.getProjectId()), "FAILED", e.getMessage());
+            throw new IllegalStateException("AI 修订失败: " + e.getMessage(), e);
+        }
+    }
+
+    @Override
+    public GenerationCheckResult checkGeneration(GenerationCheckRequest request) {
+        if (request == null || request.getDesign() == null) {
+            throw new IllegalArgumentException("模块设计不能为空");
+        }
+        ModuleDesign design = request.getDesign();
+        validateDesign(design);
+        List<GenerationCheckFinding> findings = new ArrayList<>();
+        checkTables(design, findings);
+        checkPermissions(design, findings);
+        checkApis(design, findings);
+        checkSql(request.getSqlScript(), findings);
+        checkGeneratedText("frontendCode", request.getFrontendCode(), findings);
+        checkGeneratedText("backendCode", request.getBackendCode(), findings);
+        checkGeneratedFiles(design.getModuleCode(), request.getGeneratedFiles(), findings);
+
+        GenerationCheckResult result = new GenerationCheckResult();
+        result.setFindings(findings);
+        result.setAllowedDirectories(allowedDirectories(design.getModuleCode()));
+        result.setBlockedFiles(BLOCKED_FILE_PATTERNS);
+        result.setFeatureFlags(DEFAULT_FEATURE_FLAGS);
+        result.setPassed(findings.stream().noneMatch(finding -> "ERROR".equals(finding.getSeverity())));
+        operationLogService.log("AI_CHECK_LOCAL", design.getModuleCode(), resolveProjectId(design.getProjectId()), result.isPassed() ? "SUCCESS" : "FAILED",
+                "本地安全检查发现 " + findings.size() + " 项");
+        return result;
+    }
+
+    private void checkTables(ModuleDesign design, List<GenerationCheckFinding> findings) {
+        for (TableSchema table : design.getTables()) {
+            String tableName = Objects.toString(table.getTableName(), "");
+            if (BLOCKED_CORE_TABLES.contains(tableName)) {
+                findings.add(GenerationCheckFinding.of("ERROR", "SQL_SCOPE", tableName, "禁止生成或修改平台核心表"));
+            }
+            if (!tableName.startsWith("biz_" + design.getModuleCode() + "_")) {
+                findings.add(GenerationCheckFinding.of("ERROR", "TABLE_NAMING", tableName, "业务表必须使用 biz_{moduleCode}_ 前缀"));
+            }
+            Set<String> columns = table.getColumns().stream().map(ColumnSchema::getColumnName).collect(java.util.stream.Collectors.toSet());
+            for (String required : List.of("id")) {
+                if (!columns.contains(required)) {
+                    findings.add(GenerationCheckFinding.of("ERROR", "TABLE_COLUMNS", tableName, "业务表缺少必要字段 " + required));
+                }
+            }
+        }
+    }
+
+    private void checkPermissions(ModuleDesign design, List<GenerationCheckFinding> findings) {
+        for (PermissionSchema permission : design.getPermissions()) {
+            String code = Objects.toString(permission.getPermissionCode(), "");
+            if (!code.matches(design.getModuleCode() + ":[a-z][a-z0-9_-]*:[a-z][a-z0-9_-]*")) {
+                findings.add(GenerationCheckFinding.of("WARN", "PERMISSION_FORMAT", code, "建议使用 模块编码:资源:操作 权限格式"));
+            }
+        }
+        Set<String> permissionCodes = design.getPermissions().stream().map(PermissionSchema::getPermissionCode).collect(java.util.stream.Collectors.toSet());
+        for (String action : List.of("list", "add", "edit", "delete")) {
+            boolean exists = permissionCodes.stream().anyMatch(code -> code.endsWith(":" + action) || code.equals(design.getModuleCode() + ":" + action));
+            if (!exists) {
+                findings.add(GenerationCheckFinding.of("ERROR", "PERMISSION_MISSING", design.getModuleCode(), "缺少基础权限 " + action));
+            }
+        }
+    }
+
+    private void checkApis(ModuleDesign design, List<GenerationCheckFinding> findings) {
+        for (ApiSchema api : design.getApis()) {
+            String path = Objects.toString(api.getPath(), "");
+            if (!path.startsWith("/api/biz/" + design.getModuleCode())) {
+                findings.add(GenerationCheckFinding.of("ERROR", "API_SCOPE", path, "接口必须位于 /api/biz/{moduleCode} 下"));
+            }
+        }
+    }
+
+    private void checkSql(String sqlScript, List<GenerationCheckFinding> findings) {
+        String sql = Objects.toString(sqlScript, "");
+        String lowered = sql.toLowerCase(Locale.ROOT);
+        for (String table : BLOCKED_CORE_TABLES) {
+            if (lowered.matches("(?s).*(alter|drop|truncate|delete|update)\\s+table?\\s*`?" + table + "`?.*")
+                    || lowered.matches("(?s).*(alter|drop|truncate|delete|update)\\s+`?" + table + "`?.*")) {
+                findings.add(GenerationCheckFinding.of("ERROR", "SQL_DANGER", table, "SQL 禁止修改平台核心表"));
+            }
+        }
+        for (String keyword : List.of(" drop ", " truncate ", " runtime.exec", " load_file", " into outfile")) {
+            if (lowered.contains(keyword)) {
+                findings.add(GenerationCheckFinding.of("ERROR", "SQL_DANGER", "tables.sql", "SQL 包含危险关键字 " + keyword.trim()));
+            }
+        }
+        if (StringUtils.hasText(sqlScript) && !lowered.contains("project_id")) {
+            findings.add(GenerationCheckFinding.of("ERROR", "SQL_ISOLATION", "tables.sql", "SQL 必须包含 project_id 以支持项目隔离"));
+        }
+    }
+
+    private void checkGeneratedText(String target, String content, List<GenerationCheckFinding> findings) {
+        String text = Objects.toString(content, "");
+        String lowered = text.toLowerCase(Locale.ROOT);
+        for (String pattern : DANGEROUS_CODE_PATTERNS) {
+            if (lowered.contains(pattern.toLowerCase(Locale.ROOT))) {
+                findings.add(GenerationCheckFinding.of("ERROR", "DANGEROUS_CODE", target, "生成代码包含危险片段 " + pattern));
+            }
+        }
+        if (lowered.contains("sys_user") || lowered.contains("sys_role") || lowered.contains("sys_permission")) {
+            findings.add(GenerationCheckFinding.of("ERROR", "CORE_MODULE_SCOPE", target, "生成代码禁止直接操作平台核心用户、角色或权限表"));
+        }
+    }
+
+    private void checkGeneratedFiles(String moduleCode, Map<String, String> files, List<GenerationCheckFinding> findings) {
+        if (files == null || files.isEmpty()) {
+            return;
+        }
+        List<String> allowed = allowedDirectories(moduleCode);
+        for (Map.Entry<String, String> entry : files.entrySet()) {
+            String path = normalizePath(entry.getKey());
+            boolean inAllowedDirectory = allowed.stream().anyMatch(path::startsWith);
+            if (!inAllowedDirectory) {
+                findings.add(GenerationCheckFinding.of("ERROR", "FILE_SCOPE", path, "生成文件超出 AI 白名单目录"));
+            }
+            boolean blocked = BLOCKED_FILE_PATTERNS.stream().anyMatch(path::startsWith);
+            if (blocked) {
+                findings.add(GenerationCheckFinding.of("ERROR", "FILE_BLOCKED", path, "生成文件命中平台黑名单"));
+            }
+            checkGeneratedText(path, entry.getValue(), findings);
+        }
+    }
+
+    private List<String> allowedDirectories(String moduleCode) {
+        return List.of("src/modules/" + moduleCode + "/", "server/modules/" + moduleCode + "/");
+    }
+
+    private String normalizePath(String path) {
+        return Objects.toString(path, "").replace("\\", "/").replaceFirst("^/+", "");
+    }
+
+    private RequirementRequest revisionAsRequirement(GenerationRevisionRequest request, String instruction) {
+        RequirementRequest requirement = new RequirementRequest();
+        String originalRequirement = StringUtils.hasText(request.getOriginalRequirement())
+                ? request.getOriginalRequirement()
+                : Objects.toString(request.getDesign().getDescription(), "");
+        requirement.setRequirement(originalRequirement + "\n修改意见：" + instruction);
+        requirement.setProjectId(request.getProjectId() != null ? request.getProjectId() : request.getDesign().getProjectId());
+        requirement.setModelConfigId(request.getModelConfigId() != null ? request.getModelConfigId() : request.getDesign().getModelConfigId());
+        requirement.setAgentAssistants(request.getAgentAssistants());
+        requirement.setToolAssistants(request.getToolAssistants());
+        return requirement;
+    }
+
+    private String revisionPrompt() {
+        return """
+                你是 BizAgent 生成结果修订引擎。
+                用户会提供当前 ModuleDesign、已生成的 SQL/前端/后端代码摘要，以及明确修改意见。
+                你必须在保留当前模块连续性的前提下修订 ModuleDesign，只输出严格 JSON，不要 Markdown，不要解释。
+
+                修订规则：
+                1. 优先保留 moduleCode，除非用户明确要求改模块编码。
+                2. 按用户修改意见增删改字段、页面、接口、权限、菜单。
+                3. 必须优先对齐 originalRequirement 和 instruction，尤其是字段名称、字段类型、必填、枚举和 SQL 表字段。
+                4. 不要生成登录、用户中心、网关、独立项目或平台基础架构。
+                5. 输出字段契约和首次生成一致：moduleName, moduleCode, description, tables, pages, apis, permissions, menus。
+                6. 不要输出 null；数组不能为空；不要输出代码块。
+                7. 如果字段变化，必须同步 tables、pages、apis、permissions、menus 中相关能力。
+                """;
+    }
+
+    private String revisionUserPrompt(GenerationRevisionRequest request) throws Exception {
+        Map<String, Object> payload = new LinkedHashMap<>();
+        payload.put("instruction", request.getInstruction());
+        payload.put("originalRequirement", request.getOriginalRequirement());
+        payload.put("agentAssistants", request.getAgentAssistants());
+        payload.put("toolAssistants", request.getToolAssistants());
+        payload.put("currentDesign", request.getDesign());
+        payload.put("currentSqlPreview", abbreviate(request.getSqlScript(), 3000));
+        payload.put("currentFrontendPreview", abbreviate(request.getFrontendCode(), 3000));
+        payload.put("currentBackendPreview", abbreviate(request.getBackendCode(), 3000));
+        return objectMapper.writeValueAsString(payload);
+    }
+
+    private String abbreviate(String value, int maxLength) {
+        String text = Objects.toString(value, "");
+        if (text.length() <= maxLength) {
+            return text;
+        }
+        return text.substring(0, maxLength) + "\n...内容过长已截断，修订以 currentDesign 和 instruction 为准...";
     }
 
     private String frontendCodePrompt() {
@@ -854,15 +1437,32 @@ public class AiEngineServiceImpl implements AiEngineService {
         return section;
     }
 
+    private List<String> missingGeneratedSections(String generatedCode, List<String> sectionNames) {
+        List<String> missing = new ArrayList<>();
+        for (String sectionName : sectionNames) {
+            if (!StringUtils.hasText(extractGeneratedSection(generatedCode, sectionName))) {
+                missing.add(sectionName);
+            }
+        }
+        return missing;
+    }
+
     private String extractGeneratedSection(String generatedCode, String sectionName) {
-        String marker = "// ========== " + sectionName + " ==========";
         String text = Objects.toString(generatedCode, "");
-        int start = text.indexOf(marker);
-        if (start < 0) {
+        Pattern markerPattern = Pattern.compile(
+                "(?im)^\\s*(?://|#|<!--)?\\s*=+\\s*[^\\r\\n=]*\\b"
+                        + "[^\\r\\n=]*"
+                        + Pattern.quote(sectionName)
+                        + "(?:\\.\\w+)?\\b[^\\r\\n=]*\\s*=+\\s*(?:-->)?\\s*$"
+        );
+        Matcher startMatcher = markerPattern.matcher(text);
+        if (!startMatcher.find()) {
             return "";
         }
-        int contentStart = start + marker.length();
-        int next = text.indexOf("// ==========", contentStart);
+        int contentStart = startMatcher.end();
+        Pattern nextMarkerPattern = Pattern.compile("(?im)^\\s*(?://|#|<!--)?\\s*=+\\s*[^\\r\\n]+?\\s*=+\\s*(?:-->)?\\s*$");
+        Matcher nextMatcher = nextMarkerPattern.matcher(text);
+        int next = nextMatcher.find(contentStart) ? nextMatcher.start() : -1;
         String section = next >= 0 ? text.substring(contentStart, next) : text.substring(contentStart);
         return stripCodeFence(section).trim();
     }

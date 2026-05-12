@@ -1,0 +1,221 @@
+[ {
+  "pageName" : "巡检列表",
+  "pageType" : null,
+  "path" : null,
+  "component" : null,
+  "fields" : [ {
+    "fieldName" : "device_name",
+    "label" : "设备名称",
+    "type" : "input",
+    "required" : false,
+    "placeholder" : null,
+    "options" : null
+  }, {
+    "fieldName" : "device_location",
+    "label" : "设备位置",
+    "type" : "input",
+    "required" : false,
+    "placeholder" : null,
+    "options" : null
+  }, {
+    "fieldName" : "inspection_plan",
+    "label" : "巡检计划",
+    "type" : "input",
+    "required" : false,
+    "placeholder" : null,
+    "options" : null
+  }, {
+    "fieldName" : "inspector",
+    "label" : "巡检人",
+    "type" : "input",
+    "required" : false,
+    "placeholder" : null,
+    "options" : null
+  }, {
+    "fieldName" : "inspection_time",
+    "label" : "巡检时间",
+    "type" : "datetime",
+    "required" : false,
+    "placeholder" : null,
+    "options" : null
+  }, {
+    "fieldName" : "exception_desc",
+    "label" : "异常描述",
+    "type" : "textarea",
+    "required" : false,
+    "placeholder" : null,
+    "options" : null
+  }, {
+    "fieldName" : "status",
+    "label" : "状态",
+    "type" : "select",
+    "required" : false,
+    "placeholder" : null,
+    "options" : "pending:待巡检,completed:已完成,exception:异常"
+  } ]
+}, {
+  "pageName" : "新增巡检",
+  "pageType" : null,
+  "path" : null,
+  "component" : null,
+  "fields" : [ {
+    "fieldName" : "device_name",
+    "label" : "设备名称",
+    "type" : "input",
+    "required" : true,
+    "placeholder" : null,
+    "options" : null
+  }, {
+    "fieldName" : "device_location",
+    "label" : "设备位置",
+    "type" : "input",
+    "required" : true,
+    "placeholder" : null,
+    "options" : null
+  }, {
+    "fieldName" : "inspection_plan",
+    "label" : "巡检计划",
+    "type" : "input",
+    "required" : false,
+    "placeholder" : null,
+    "options" : null
+  }, {
+    "fieldName" : "inspector",
+    "label" : "巡检人",
+    "type" : "input",
+    "required" : true,
+    "placeholder" : null,
+    "options" : null
+  }, {
+    "fieldName" : "inspection_time",
+    "label" : "巡检时间",
+    "type" : "datetime",
+    "required" : true,
+    "placeholder" : null,
+    "options" : null
+  }, {
+    "fieldName" : "exception_desc",
+    "label" : "异常描述",
+    "type" : "textarea",
+    "required" : false,
+    "placeholder" : null,
+    "options" : null
+  }, {
+    "fieldName" : "status",
+    "label" : "状态",
+    "type" : "select",
+    "required" : true,
+    "placeholder" : null,
+    "options" : "pending:待巡检,completed:已完成,exception:异常"
+  } ]
+}, {
+  "pageName" : "编辑巡检",
+  "pageType" : null,
+  "path" : null,
+  "component" : null,
+  "fields" : [ {
+    "fieldName" : "device_name",
+    "label" : "设备名称",
+    "type" : "input",
+    "required" : true,
+    "placeholder" : null,
+    "options" : null
+  }, {
+    "fieldName" : "device_location",
+    "label" : "设备位置",
+    "type" : "input",
+    "required" : true,
+    "placeholder" : null,
+    "options" : null
+  }, {
+    "fieldName" : "inspection_plan",
+    "label" : "巡检计划",
+    "type" : "input",
+    "required" : false,
+    "placeholder" : null,
+    "options" : null
+  }, {
+    "fieldName" : "inspector",
+    "label" : "巡检人",
+    "type" : "input",
+    "required" : true,
+    "placeholder" : null,
+    "options" : null
+  }, {
+    "fieldName" : "inspection_time",
+    "label" : "巡检时间",
+    "type" : "datetime",
+    "required" : true,
+    "placeholder" : null,
+    "options" : null
+  }, {
+    "fieldName" : "exception_desc",
+    "label" : "异常描述",
+    "type" : "textarea",
+    "required" : false,
+    "placeholder" : null,
+    "options" : null
+  }, {
+    "fieldName" : "status",
+    "label" : "状态",
+    "type" : "select",
+    "required" : true,
+    "placeholder" : null,
+    "options" : "pending:待巡检,completed:已完成,exception:异常"
+  } ]
+}, {
+  "pageName" : "巡检详情",
+  "pageType" : null,
+  "path" : null,
+  "component" : null,
+  "fields" : [ {
+    "fieldName" : "device_name",
+    "label" : "设备名称",
+    "type" : "input",
+    "required" : false,
+    "placeholder" : null,
+    "options" : null
+  }, {
+    "fieldName" : "device_location",
+    "label" : "设备位置",
+    "type" : "input",
+    "required" : false,
+    "placeholder" : null,
+    "options" : null
+  }, {
+    "fieldName" : "inspection_plan",
+    "label" : "巡检计划",
+    "type" : "input",
+    "required" : false,
+    "placeholder" : null,
+    "options" : null
+  }, {
+    "fieldName" : "inspector",
+    "label" : "巡检人",
+    "type" : "input",
+    "required" : false,
+    "placeholder" : null,
+    "options" : null
+  }, {
+    "fieldName" : "inspection_time",
+    "label" : "巡检时间",
+    "type" : "datetime",
+    "required" : false,
+    "placeholder" : null,
+    "options" : null
+  }, {
+    "fieldName" : "exception_desc",
+    "label" : "异常描述",
+    "type" : "textarea",
+    "required" : false,
+    "placeholder" : null,
+    "options" : null
+  }, {
+    "fieldName" : "status",
+    "label" : "状态",
+    "type" : "select",
+    "required" : false,
+    "placeholder" : null,
+    "options" : "pending:待巡检,completed:已完成,exception:异常"
+  } ]
+} ]

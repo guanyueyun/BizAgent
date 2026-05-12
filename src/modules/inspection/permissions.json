@@ -1,0 +1,21 @@
+[ {
+  "permissionCode" : "inspection:list",
+  "permissionName" : "巡检列表查询",
+  "moduleName" : null
+}, {
+  "permissionCode" : "inspection:add",
+  "permissionName" : "新增巡检",
+  "moduleName" : null
+}, {
+  "permissionCode" : "inspection:edit",
+  "permissionName" : "编辑巡检",
+  "moduleName" : null
+}, {
+  "permissionCode" : "inspection:delete",
+  "permissionName" : "删除巡检",
+  "moduleName" : null
+}, {
+  "permissionCode" : "inspection:statistics",
+  "permissionName" : "巡检统计分析",
+  "moduleName" : null
+} ]

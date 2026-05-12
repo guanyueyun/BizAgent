@@ -1,0 +1,37 @@
+[ {
+  "permissionCode" : "contract:list",
+  "permissionName" : "合同管理查看",
+  "moduleName" : "合同管理"
+}, {
+  "permissionCode" : "contract:add",
+  "permissionName" : "合同管理新增",
+  "moduleName" : "合同管理"
+}, {
+  "permissionCode" : "contract:edit",
+  "permissionName" : "合同管理编辑",
+  "moduleName" : "合同管理"
+}, {
+  "permissionCode" : "contract:delete",
+  "permissionName" : "合同管理删除",
+  "moduleName" : "合同管理"
+}, {
+  "permissionCode" : "contract:import",
+  "permissionName" : "合同管理导入",
+  "moduleName" : "合同管理"
+}, {
+  "permissionCode" : "contract:export",
+  "permissionName" : "合同管理导出",
+  "moduleName" : "合同管理"
+}, {
+  "permissionCode" : "contract:statistics",
+  "permissionName" : "合同管理统计",
+  "moduleName" : "合同管理"
+}, {
+  "permissionCode" : "contract:approve",
+  "permissionName" : "合同管理审批",
+  "moduleName" : "合同管理"
+}, {
+  "permissionCode" : "contract:notify",
+  "permissionName" : "合同管理提醒",
+  "moduleName" : "合同管理"
+} ]

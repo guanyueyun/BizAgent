@@ -1,0 +1,21 @@
+[ {
+  "permissionCode" : "equipment_inspection:list",
+  "permissionName" : "巡检列表",
+  "moduleName" : null
+}, {
+  "permissionCode" : "equipment_inspection:add",
+  "permissionName" : "新增巡检",
+  "moduleName" : null
+}, {
+  "permissionCode" : "equipment_inspection:edit",
+  "permissionName" : "编辑巡检",
+  "moduleName" : null
+}, {
+  "permissionCode" : "equipment_inspection:delete",
+  "permissionName" : "删除巡检",
+  "moduleName" : null
+}, {
+  "permissionCode" : "equipment_inspection:detail",
+  "permissionName" : "巡检详情",
+  "moduleName" : null
+} ]

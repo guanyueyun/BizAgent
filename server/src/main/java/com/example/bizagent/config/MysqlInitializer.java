@@ -43,6 +43,7 @@ public class MysqlInitializer {
             addColumnIfMissing(stmt, "sys_module", "back_path", "VARCHAR(255)");
             addColumnIfMissing(stmt, "sys_module", "design_json", "LONGTEXT");
             addColumnIfMissing(stmt, "sys_module", "lifecycle", "INT DEFAULT 0");
+            addColumnIfMissing(stmt, "sys_model_config", "retry_count", "INT DEFAULT 0");
             stmt.close();
             conn.close();
             System.out.println("[OK] MySQL database initialized successfully!");

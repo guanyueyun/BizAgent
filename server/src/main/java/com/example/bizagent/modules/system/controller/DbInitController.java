@@ -99,7 +99,8 @@ public class DbInitController {
                     create_time DATETIME DEFAULT CURRENT_TIMESTAMP,
                     update_by BIGINT,
                     update_time DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-                    del_flag INT DEFAULT 0
+                    del_flag INT DEFAULT 0,
+                    project_id BIGINT DEFAULT 0
                 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
                 
                 CREATE TABLE IF NOT EXISTS sys_module (
@@ -164,6 +165,7 @@ public class DbInitController {
             addColumnIfMissing(stmt, "sys_module", "front_path", "VARCHAR(255)");
             addColumnIfMissing(stmt, "sys_module", "back_path", "VARCHAR(255)");
             addColumnIfMissing(stmt, "sys_module", "lifecycle", "INT DEFAULT 0");
+            addColumnIfMissing(stmt, "sys_project", "project_id", "BIGINT DEFAULT 0");
             stmt.close();
             conn.close();
             

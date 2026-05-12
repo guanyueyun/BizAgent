@@ -1,0 +1,253 @@
+// ========== Entity ==========
+package com.example.bizagent.modules.customer_visit.entity;
+
+import com.baomidou.mybatisplus.annotation.*;
+import lombok.Data;
+import java.time.LocalDateTime;
+
+@Data
+@TableName("biz_customer_visit_main")
+public class CustomerVisitMain {
+
+    @TableId(type = IdType.AUTO)
+    private Long id;
+
+    private Long projectId;
+
+    private String customerName;
+
+    private LocalDateTime visitTime;
+
+    private String visitMethod;
+
+    private String visitResult;
+
+    private String follower;
+
+    private String status;
+
+    @TableField(fill = FieldFill.INSERT)
+    private LocalDateTime createTime;
+
+    @TableField(fill = FieldFill.INSERT_UPDATE)
+    private LocalDateTime updateTime;
+
+    @TableLogic
+    private Integer delFlag;
+}
+
+// ========== Mapper ==========
+package com.example.bizagent.modules.customer_visit.mapper;
+
+import com.baomidou.mybatisplus.core.mapper.BaseMapper;
+import com.example.bizagent.modules.customer_visit.entity.CustomerVisitMain;
+import org.apache.ibatis.annotations.Mapper;
+import org.apache.ibatis.annotations.Param;
+import org.apache.ibatis.annotations.Select;
+import java.util.List;
+import java.util.Map;
+
+@Mapper
+public interface CustomerVisitMainMapper extends BaseMapper<CustomerVisitMain> {
+
+    @Select("SELECT visit_method AS method, COUNT(*) AS count FROM biz_customer_visit_main WHERE project_id = #{projectId} AND del_flag = 0 GROUP BY visit_method")
+    List<Map<String, Object>> countByVisitMethod(@Param("projectId") Long projectId);
+
+    @Select("SELECT status, COUNT(*) AS count FROM biz_customer_visit_main WHERE project_id = #{projectId} AND del_flag = 0 GROUP BY status")
+    List<Map<String, Object>> countByStatus(@Param("projectId") Long projectId);
+
+    @Select("SELECT DATE_FORMAT(visit_time, '%Y-%m') AS month, COUNT(*) AS count FROM biz_customer_visit_main WHERE project_id = #{projectId} AND del_flag = 0 GROUP BY month ORDER BY month")
+    List<Map<String, Object>> countByMonth(@Param("projectId") Long projectId);
+}
+
+// ========== Service ==========
+package com.example.bizagent.modules.customer_visit.service;
+
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.example.bizagent.common.PageResponse;
+import com.example.bizagent.common.ResponseEntity;
+import com.example.bizagent.modules.customer_visit.entity.CustomerVisitMain;
+import com.example.bizagent.modules.customer_visit.mapper.CustomerVisitMainMapper;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
+
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+
+@Service
+public class CustomerVisitMainService {
+
+    @Autowired
+    private CustomerVisitMainMapper customerVisitMainMapper;
+
+    public PageResponse<CustomerVisitMain> list(Long projectId, String customerName, String visitMethod, String follower, String status, Integer pageNum, Integer pageSize) {
+        LambdaQueryWrapper<CustomerVisitMain> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(CustomerVisitMain::getDelFlag, 0);
+        wrapper.eq(CustomerVisitMain::getProjectId, projectId);
+        if (StringUtils.hasText(customerName)) {
+            wrapper.like(CustomerVisitMain::getCustomerName, customerName);
+        }
+        if (StringUtils.hasText(visitMethod)) {
+            wrapper.eq(CustomerVisitMain::getVisitMethod, visitMethod);
+        }
+        if (StringUtils.hasText(follower)) {
+            wrapper.like(CustomerVisitMain::getFollower, follower);
+        }
+        if (StringUtils.hasText(status)) {
+            wrapper.eq(CustomerVisitMain::getStatus, status);
+        }
+        wrapper.orderByDesc(CustomerVisitMain::getCreateTime);
+        IPage<CustomerVisitMain> page = customerVisitMainMapper.selectPage(new Page<>(pageNum, pageSize), wrapper);
+        return PageResponse.success(page.getRecords(), page.getTotal());
+    }
+
+    public ResponseEntity<CustomerVisitMain> detail(Long id, Long projectId) {
+        CustomerVisitMain entity = customerVisitMainMapper.selectOne(
+                new LambdaQueryWrapper<CustomerVisitMain>()
+                        .eq(CustomerVisitMain::getId, id)
+                        .eq(CustomerVisitMain::getDelFlag, 0)
+                        .eq(CustomerVisitMain::getProjectId, projectId)
+        );
+        if (entity == null) {
+            return ResponseEntity.error("记录不存在");
+        }
+        return ResponseEntity.success(entity);
+    }
+
+    @Transactional(rollbackFor = Exception.class)
+    public ResponseEntity<String> create(CustomerVisitMain entity, Long projectId) {
+        if (!StringUtils.hasText(entity.getCustomerName())) {
+            return ResponseEntity.error("客户名称不能为空");
+        }
+        if (entity.getVisitTime() == null) {
+            return ResponseEntity.error("回访时间不能为空");
+        }
+        if (!StringUtils.hasText(entity.getVisitMethod())) {
+            return ResponseEntity.error("回访方式不能为空");
+        }
+        if (!StringUtils.hasText(entity.getFollower())) {
+            return ResponseEntity.error("跟进人不能为空");
+        }
+        entity.setProjectId(projectId);
+        customerVisitMainMapper.insert(entity);
+        return ResponseEntity.success("新增成功");
+    }
+
+    @Transactional(rollbackFor = Exception.class)
+    public ResponseEntity<String> update(CustomerVisitMain entity, Long id, Long projectId) {
+        CustomerVisitMain existing = customerVisitMainMapper.selectOne(
+                new LambdaQueryWrapper<CustomerVisitMain>()
+                        .eq(CustomerVisitMain::getId, id)
+                        .eq(CustomerVisitMain::getDelFlag, 0)
+                        .eq(CustomerVisitMain::getProjectId, projectId)
+        );
+        if (existing == null) {
+            return ResponseEntity.error("记录不存在");
+        }
+        if (!StringUtils.hasText(entity.getCustomerName())) {
+            return ResponseEntity.error("客户名称不能为空");
+        }
+        if (entity.getVisitTime() == null) {
+            return ResponseEntity.error("回访时间不能为空");
+        }
+        if (!StringUtils.hasText(entity.getVisitMethod())) {
+            return ResponseEntity.error("回访方式不能为空");
+        }
+        if (!StringUtils.hasText(entity.getFollower())) {
+            return ResponseEntity.error("跟进人不能为空");
+        }
+        entity.setId(id);
+        entity.setProjectId(projectId);
+        customerVisitMainMapper.updateById(entity);
+        return ResponseEntity.success("更新成功");
+    }
+
+    @Transactional(rollbackFor = Exception.class)
+    public ResponseEntity<String> delete(Long id, Long projectId) {
+        CustomerVisitMain existing = customerVisitMainMapper.selectOne(
+                new LambdaQueryWrapper<CustomerVisitMain>()
+                        .eq(CustomerVisitMain::getId, id)
+                        .eq(CustomerVisitMain::getDelFlag, 0)
+                        .eq(CustomerVisitMain::getProjectId, projectId)
+        );
+        if (existing == null) {
+            return ResponseEntity.error("记录不存在");
+        }
+        customerVisitMainMapper.deleteById(id);
+        return ResponseEntity.success("删除成功");
+    }
+
+    public ResponseEntity<Map<String, Object>> statistics(Long projectId) {
+        Map<String, Object> result = new HashMap<>();
+        List<Map<String, Object>> methodStats = customerVisitMainMapper.countByVisitMethod(projectId);
+        List<Map<String, Object>> statusStats = customerVisitMainMapper.countByStatus(projectId);
+        List<Map<String, Object>> monthlyStats = customerVisitMainMapper.countByMonth(projectId);
+        result.put("visitMethodStats", methodStats);
+        result.put("statusStats", statusStats);
+        result.put("monthlyStats", monthlyStats);
+        return ResponseEntity.success(result);
+    }
+}
+
+// ========== Controller ==========
+package com.example.bizagent.modules.customer_visit.controller;
+
+import com.example.bizagent.common.PageResponse;
+import com.example.bizagent.common.ResponseEntity;
+import com.example.bizagent.modules.customer_visit.entity.CustomerVisitMain;
+import com.example.bizagent.modules.customer_visit.service.CustomerVisitMainService;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.Map;
+
+@RestController
+@RequestMapping("/api/biz/customer_visit")
+public class CustomerVisitMainController {
+
+    @Autowired
+    private CustomerVisitMainService customerVisitMainService;
+
+    @GetMapping("/list")
+    public PageResponse<CustomerVisitMain> list(
+            @RequestParam Long projectId,
+            @RequestParam(required = false) String customerName,
+            @RequestParam(required = false) String visitMethod,
+            @RequestParam(required = false) String follower,
+            @RequestParam(required = false) String status,
+            @RequestParam(defaultValue = "1") Integer pageNum,
+            @RequestParam(defaultValue = "10") Integer pageSize) {
+        return customerVisitMainService.list(projectId, customerName, visitMethod, follower, status, pageNum, pageSize);
+    }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<CustomerVisitMain> detail(@PathVariable Long id, @RequestParam Long projectId) {
+        return customerVisitMainService.detail(id, projectId);
+    }
+
+    @PostMapping
+    public ResponseEntity<String> create(@RequestBody CustomerVisitMain entity, @RequestParam Long projectId) {
+        return customerVisitMainService.create(entity, projectId);
+    }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<String> update(@RequestBody CustomerVisitMain entity, @PathVariable Long id, @RequestParam Long projectId) {
+        return customerVisitMainService.update(entity, id, projectId);
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<String> delete(@PathVariable Long id, @RequestParam Long projectId) {
+        return customerVisitMainService.delete(id, projectId);
+    }
+
+    @GetMapping("/statistics")
+    public ResponseEntity<Map<String, Object>> statistics(@RequestParam Long projectId) {
+        return customerVisitMainService.statistics(projectId);
+    }
+}

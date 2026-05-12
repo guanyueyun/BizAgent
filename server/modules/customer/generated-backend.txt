@@ -1,0 +1,263 @@
+// ========== Entity ==========
+package com.example.bizagent.modules.customer.entity;
+
+import com.baomidou.mybatisplus.annotation.*;
+import lombok.Data;
+import java.time.LocalDateTime;
+
+@Data
+@TableName("biz_customer_main")
+public class CustomerMain {
+    @TableId(type = IdType.AUTO)
+    private Long id;
+
+    private String customerName;
+
+    private String contactPerson;
+
+    private String contactPhone;
+
+    private String industry;
+
+    private String source;
+
+    private String followUpPerson;
+
+    private String status;
+
+    @TableField(fill = FieldFill.INSERT)
+    private Long projectId;
+
+    @TableLogic
+    @TableField(fill = FieldFill.INSERT)
+    private Integer delFlag;
+
+    @TableField(fill = FieldFill.INSERT)
+    private LocalDateTime createTime;
+
+    @TableField(fill = FieldFill.INSERT_UPDATE)
+    private LocalDateTime updateTime;
+
+    @TableField(fill = FieldFill.INSERT)
+    private Long createBy;
+
+    @TableField(fill = FieldFill.INSERT_UPDATE)
+    private Long updateBy;
+}
+// ========== Mapper ==========
+package com.example.bizagent.modules.customer.mapper;
+
+import com.baomidou.mybatisplus.core.mapper.BaseMapper;
+import com.example.bizagent.modules.customer.entity.CustomerMain;
+import org.apache.ibatis.annotations.Mapper;
+import org.apache.ibatis.annotations.Param;
+import org.apache.ibatis.annotations.Select;
+import java.util.List;
+import java.util.Map;
+
+@Mapper
+public interface CustomerMainMapper extends BaseMapper<CustomerMain> {
+
+    @Select("SELECT status, COUNT(*) AS count FROM biz_customer_main WHERE project_id = #{projectId} AND del_flag = 0 GROUP BY status")
+    List<Map<String, Object>> countByStatus(@Param("projectId") Long projectId);
+
+    @Select("SELECT source, COUNT(*) AS count FROM biz_customer_main WHERE project_id = #{projectId} AND del_flag = 0 GROUP BY source")
+    List<Map<String, Object>> countBySource(@Param("projectId") Long projectId);
+
+    @Select("SELECT COUNT(*) FROM biz_customer_main WHERE project_id = #{projectId} AND del_flag = 0 AND DATE(create_time) = CURDATE()")
+    Long countTodayAdded(@Param("projectId") Long projectId);
+}
+// ========== Service ==========
+package com.example.bizagent.modules.customer.service;
+
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.example.bizagent.common.PageResponse;
+import com.example.bizagent.common.ResponseEntity;
+import com.example.bizagent.modules.customer.entity.CustomerMain;
+import com.example.bizagent.modules.customer.mapper.CustomerMainMapper;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
+
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+@Service
+public class CustomerMainService extends ServiceImpl<CustomerMainMapper, CustomerMain> {
+
+    public PageResponse<CustomerMain> list(Integer pageNum, Integer pageSize, Long projectId, String customerName, String contactPerson, String contactPhone, String industry, String source, String followUpPerson, String status) {
+        Page<CustomerMain> page = new Page<>(pageNum, pageSize);
+        LambdaQueryWrapper<CustomerMain> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(CustomerMain::getProjectId, projectId);
+        wrapper.eq(CustomerMain::getDelFlag, 0);
+        if (StringUtils.hasText(customerName)) {
+            wrapper.like(CustomerMain::getCustomerName, customerName);
+        }
+        if (StringUtils.hasText(contactPerson)) {
+            wrapper.like(CustomerMain::getContactPerson, contactPerson);
+        }
+        if (StringUtils.hasText(contactPhone)) {
+            wrapper.like(CustomerMain::getContactPhone, contactPhone);
+        }
+        if (StringUtils.hasText(industry)) {
+            wrapper.eq(CustomerMain::getIndustry, industry);
+        }
+        if (StringUtils.hasText(source)) {
+            wrapper.eq(CustomerMain::getSource, source);
+        }
+        if (StringUtils.hasText(followUpPerson)) {
+            wrapper.like(CustomerMain::getFollowUpPerson, followUpPerson);
+        }
+        if (StringUtils.hasText(status)) {
+            wrapper.eq(CustomerMain::getStatus, status);
+        }
+        wrapper.orderByDesc(CustomerMain::getCreateTime);
+        IPage<CustomerMain> result = baseMapper.selectPage(page, wrapper);
+        return new PageResponse<>(result.getRecords(), result.getTotal(), result.getCurrent(), result.getSize());
+    }
+
+    public ResponseEntity<CustomerMain> detail(Long id, Long projectId) {
+        LambdaQueryWrapper<CustomerMain> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(CustomerMain::getId, id);
+        wrapper.eq(CustomerMain::getProjectId, projectId);
+        wrapper.eq(CustomerMain::getDelFlag, 0);
+        CustomerMain entity = baseMapper.selectOne(wrapper);
+        if (entity == null) {
+            return ResponseEntity.fail("客户不存在");
+        }
+        return ResponseEntity.success(entity);
+    }
+
+    @Transactional(rollbackFor = Exception.class)
+    public ResponseEntity<Long> create(CustomerMain entity, Long projectId) {
+        entity.setId(null);
+        entity.setProjectId(projectId);
+        entity.setDelFlag(0);
+        if (!StringUtils.hasText(entity.getCustomerName())) {
+            return ResponseEntity.fail("客户名称不能为空");
+        }
+        if (!StringUtils.hasText(entity.getStatus())) {
+            entity.setStatus("potential");
+        }
+        if (baseMapper.insert(entity) > 0) {
+            return ResponseEntity.success(entity.getId());
+        }
+        return ResponseEntity.fail("新增客户失败");
+    }
+
+    @Transactional(rollbackFor = Exception.class)
+    public ResponseEntity<Boolean> update(CustomerMain entity, Long projectId) {
+        LambdaQueryWrapper<CustomerMain> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(CustomerMain::getId, entity.getId());
+        wrapper.eq(CustomerMain::getProjectId, projectId);
+        wrapper.eq(CustomerMain::getDelFlag, 0);
+        CustomerMain existing = baseMapper.selectOne(wrapper);
+        if (existing == null) {
+            return ResponseEntity.fail("客户不存在或不属于当前项目");
+        }
+        if (!StringUtils.hasText(entity.getCustomerName())) {
+            return ResponseEntity.fail("客户名称不能为空");
+        }
+        entity.setProjectId(null);
+        entity.setDelFlag(null);
+        entity.setCreateTime(null);
+        entity.setCreateBy(null);
+        if (baseMapper.updateById(entity) > 0) {
+            return ResponseEntity.success(true);
+        }
+        return ResponseEntity.fail("更新客户失败");
+    }
+
+    @Transactional(rollbackFor = Exception.class)
+    public ResponseEntity<Boolean> delete(Long id, Long projectId) {
+        LambdaQueryWrapper<CustomerMain> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(CustomerMain::getId, id);
+        wrapper.eq(CustomerMain::getProjectId, projectId);
+        wrapper.eq(CustomerMain::getDelFlag, 0);
+        CustomerMain existing = baseMapper.selectOne(wrapper);
+        if (existing == null) {
+            return ResponseEntity.fail("客户不存在或不属于当前项目");
+        }
+        if (baseMapper.deleteById(id) > 0) {
+            return ResponseEntity.success(true);
+        }
+        return ResponseEntity.fail("删除客户失败");
+    }
+
+    public ResponseEntity<Map<String, Object>> statistics(Long projectId) {
+        Map<String, Object> result = new HashMap<>();
+        List<Map<String, Object>> statusCounts = baseMapper.countByStatus(projectId);
+        List<Map<String, Object>> sourceCounts = baseMapper.countBySource(projectId);
+        Long total = lambdaQuery().eq(CustomerMain::getProjectId, projectId).eq(CustomerMain::getDelFlag, 0).count();
+        Long todayAdded = baseMapper.countTodayAdded(projectId);
+        result.put("total", total);
+        result.put("todayAdded", todayAdded);
+        result.put("statusCounts", statusCounts);
+        result.put("sourceCounts", sourceCounts);
+        return ResponseEntity.success(result);
+    }
+}
+// ========== Controller ==========
+package com.example.bizagent.modules.customer.controller;
+
+import com.example.bizagent.common.PageResponse;
+import com.example.bizagent.common.ResponseEntity;
+import com.example.bizagent.modules.customer.entity.CustomerMain;
+import com.example.bizagent.modules.customer.service.CustomerMainService;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.Map;
+
+@RestController
+@RequestMapping("/api/biz/customer")
+public class CustomerMainController {
+
+    @Autowired
+    private CustomerMainService customerMainService;
+
+    @GetMapping("/list")
+    public PageResponse<CustomerMain> list(
+            @RequestParam(defaultValue = "1") Integer pageNum,
+            @RequestParam(defaultValue = "10") Integer pageSize,
+            @RequestParam Long projectId,
+            @RequestParam(required = false) String customerName,
+            @RequestParam(required = false) String contactPerson,
+            @RequestParam(required = false) String contactPhone,
+            @RequestParam(required = false) String industry,
+            @RequestParam(required = false) String source,
+            @RequestParam(required = false) String followUpPerson,
+            @RequestParam(required = false) String status) {
+        return customerMainService.list(pageNum, pageSize, projectId, customerName, contactPerson, contactPhone, industry, source, followUpPerson, status);
+    }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<CustomerMain> detail(@PathVariable Long id, @RequestParam Long projectId) {
+        return customerMainService.detail(id, projectId);
+    }
+
+    @PostMapping
+    public ResponseEntity<Long> create(@RequestBody CustomerMain entity, @RequestParam Long projectId) {
+        return customerMainService.create(entity, projectId);
+    }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<Boolean> update(@PathVariable Long id, @RequestBody CustomerMain entity, @RequestParam Long projectId) {
+        entity.setId(id);
+        return customerMainService.update(entity, projectId);
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Boolean> delete(@PathVariable Long id, @RequestParam Long projectId) {
+        return customerMainService.delete(id, projectId);
+    }
+
+    @GetMapping("/statistics")
+    public ResponseEntity<Map<String, Object>> statistics(@RequestParam Long projectId) {
+        return customerMainService.statistics(projectId);
+    }
+}

@@ -1,0 +1,9 @@
+[ {
+  "menuName" : "设备巡检",
+  "path" : "/module-runtime/equipment_inspection",
+  "component" : "ModuleRuntime",
+  "parentId" : 0,
+  "icon" : null,
+  "sortOrder" : null,
+  "menuType" : 2
+} ]

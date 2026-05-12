@@ -1,0 +1,33 @@
+[ {
+  "permissionCode" : "vehicle:list",
+  "permissionName" : "车辆列表查看",
+  "moduleName" : null
+}, {
+  "permissionCode" : "vehicle:add",
+  "permissionName" : "新增车辆",
+  "moduleName" : null
+}, {
+  "permissionCode" : "vehicle:edit",
+  "permissionName" : "编辑车辆",
+  "moduleName" : null
+}, {
+  "permissionCode" : "vehicle:delete",
+  "permissionName" : "删除车辆",
+  "moduleName" : null
+}, {
+  "permissionCode" : "vehicle:detail",
+  "permissionName" : "查看车辆详情",
+  "moduleName" : null
+}, {
+  "permissionCode" : "vehicle:statistics",
+  "permissionName" : "车辆统计",
+  "moduleName" : null
+}, {
+  "permissionCode" : "vehicle:submit",
+  "permissionName" : "提交审批",
+  "moduleName" : null
+}, {
+  "permissionCode" : "vehicle:approve",
+  "permissionName" : "审批车辆",
+  "moduleName" : null
+} ]

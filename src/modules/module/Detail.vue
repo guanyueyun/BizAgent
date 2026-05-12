@@ -5,7 +5,6 @@
       <el-descriptions-item label="名称">{{ form.name || '-' }}</el-descriptions-item>
       <el-descriptions-item label="负责人">{{ form.owner_name || '-' }}</el-descriptions-item>
       <el-descriptions-item label="联系电话">{{ form.contact_phone || '-' }}</el-descriptions-item>
-      <el-descriptions-item label="业务日期">{{ form.biz_date || '-' }}</el-descriptions-item>
       <el-descriptions-item label="业务时间">{{ form.biz_time || '-' }}</el-descriptions-item>
       <el-descriptions-item label="状态">{{ form.status || '-' }}</el-descriptions-item>
       <el-descriptions-item label="备注">{{ form.remark || '-' }}</el-descriptions-item>

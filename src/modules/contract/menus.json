@@ -1,0 +1,9 @@
+[ {
+  "menuName" : "合同管理",
+  "path" : "/module-runtime/contract",
+  "component" : "ModuleRuntime",
+  "parentId" : 0,
+  "icon" : "component",
+  "sortOrder" : 100,
+  "menuType" : 2
+} ]

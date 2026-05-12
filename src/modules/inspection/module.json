@@ -1,0 +1,452 @@
+{
+  "moduleName" : "设备巡检模块",
+  "moduleCode" : "inspection",
+  "description" : "设备巡检模块，包含巡检计划、异常整改和统计分析功能",
+  "projectId" : 1,
+  "modelConfigId" : null,
+  "tables" : [ {
+    "tableName" : "biz_inspection_main",
+    "tableComment" : "巡检主表",
+    "columns" : [ {
+      "columnName" : "id",
+      "dataType" : "BIGINT",
+      "comment" : "主键",
+      "nullable" : false,
+      "defaultValue" : null,
+      "primaryKey" : true,
+      "autoIncrement" : true
+    }, {
+      "columnName" : "device_name",
+      "dataType" : "VARCHAR(100)",
+      "comment" : "设备名称",
+      "nullable" : false,
+      "defaultValue" : null,
+      "primaryKey" : false,
+      "autoIncrement" : false
+    }, {
+      "columnName" : "device_location",
+      "dataType" : "VARCHAR(100)",
+      "comment" : "设备位置",
+      "nullable" : false,
+      "defaultValue" : null,
+      "primaryKey" : false,
+      "autoIncrement" : false
+    }, {
+      "columnName" : "plan_name",
+      "dataType" : "VARCHAR(100)",
+      "comment" : "巡检计划名称",
+      "nullable" : false,
+      "defaultValue" : null,
+      "primaryKey" : false,
+      "autoIncrement" : false
+    }, {
+      "columnName" : "inspector",
+      "dataType" : "VARCHAR(100)",
+      "comment" : "巡检人",
+      "nullable" : false,
+      "defaultValue" : null,
+      "primaryKey" : false,
+      "autoIncrement" : false
+    }, {
+      "columnName" : "inspection_time",
+      "dataType" : "VARCHAR(100)",
+      "comment" : "巡检时间",
+      "nullable" : false,
+      "defaultValue" : null,
+      "primaryKey" : false,
+      "autoIncrement" : false
+    }, {
+      "columnName" : "status",
+      "dataType" : "VARCHAR(100)",
+      "comment" : "状态：pending-待巡检，completed-已完成，abnormal-异常",
+      "nullable" : false,
+      "defaultValue" : "'pending'",
+      "primaryKey" : false,
+      "autoIncrement" : false
+    }, {
+      "columnName" : "exception_desc",
+      "dataType" : "VARCHAR(100)",
+      "comment" : "异常描述",
+      "nullable" : true,
+      "defaultValue" : null,
+      "primaryKey" : false,
+      "autoIncrement" : false
+    }, {
+      "columnName" : "rectification_status",
+      "dataType" : "VARCHAR(100)",
+      "comment" : "整改状态：none-无需整改，pending-待整改，rectified-已整改",
+      "nullable" : false,
+      "defaultValue" : "'none'",
+      "primaryKey" : false,
+      "autoIncrement" : false
+    }, {
+      "columnName" : "rectification_measure",
+      "dataType" : "VARCHAR(100)",
+      "comment" : "整改措施",
+      "nullable" : true,
+      "defaultValue" : null,
+      "primaryKey" : false,
+      "autoIncrement" : false
+    }, {
+      "columnName" : "rectification_person",
+      "dataType" : "VARCHAR(100)",
+      "comment" : "整改责任人",
+      "nullable" : true,
+      "defaultValue" : null,
+      "primaryKey" : false,
+      "autoIncrement" : false
+    }, {
+      "columnName" : "rectification_time",
+      "dataType" : "VARCHAR(100)",
+      "comment" : "整改完成时间",
+      "nullable" : true,
+      "defaultValue" : null,
+      "primaryKey" : false,
+      "autoIncrement" : false
+    } ]
+  } ],
+  "pages" : [ {
+    "pageName" : "巡检列表",
+    "pageType" : null,
+    "path" : null,
+    "component" : null,
+    "fields" : [ {
+      "fieldName" : "device_name",
+      "label" : "设备名称",
+      "type" : "input",
+      "required" : false,
+      "placeholder" : null,
+      "options" : null
+    }, {
+      "fieldName" : "device_location",
+      "label" : "设备位置",
+      "type" : "input",
+      "required" : false,
+      "placeholder" : null,
+      "options" : null
+    }, {
+      "fieldName" : "inspector",
+      "label" : "巡检人",
+      "type" : "input",
+      "required" : false,
+      "placeholder" : null,
+      "options" : null
+    }, {
+      "fieldName" : "status",
+      "label" : "状态",
+      "type" : "select",
+      "required" : false,
+      "placeholder" : null,
+      "options" : "pending:待巡检,completed:已完成,abnormal:异常"
+    }, {
+      "fieldName" : "inspection_time",
+      "label" : "巡检时间",
+      "type" : "datetime",
+      "required" : false,
+      "placeholder" : null,
+      "options" : null
+    }, {
+      "fieldName" : "rectification_status",
+      "label" : "整改状态",
+      "type" : "select",
+      "required" : false,
+      "placeholder" : null,
+      "options" : "none:无需整改,pending:待整改,rectified:已整改"
+    } ]
+  }, {
+    "pageName" : "新增巡检",
+    "pageType" : null,
+    "path" : null,
+    "component" : null,
+    "fields" : [ {
+      "fieldName" : "device_name",
+      "label" : "设备名称",
+      "type" : "input",
+      "required" : true,
+      "placeholder" : null,
+      "options" : null
+    }, {
+      "fieldName" : "device_location",
+      "label" : "设备位置",
+      "type" : "input",
+      "required" : true,
+      "placeholder" : null,
+      "options" : null
+    }, {
+      "fieldName" : "plan_name",
+      "label" : "巡检计划名称",
+      "type" : "input",
+      "required" : true,
+      "placeholder" : null,
+      "options" : null
+    }, {
+      "fieldName" : "inspector",
+      "label" : "巡检人",
+      "type" : "input",
+      "required" : true,
+      "placeholder" : null,
+      "options" : null
+    }, {
+      "fieldName" : "inspection_time",
+      "label" : "巡检时间",
+      "type" : "datetime",
+      "required" : true,
+      "placeholder" : null,
+      "options" : null
+    }, {
+      "fieldName" : "status",
+      "label" : "状态",
+      "type" : "select",
+      "required" : true,
+      "placeholder" : null,
+      "options" : "pending:待巡检,completed:已完成,abnormal:异常"
+    } ]
+  }, {
+    "pageName" : "编辑巡检",
+    "pageType" : null,
+    "path" : null,
+    "component" : null,
+    "fields" : [ {
+      "fieldName" : "device_name",
+      "label" : "设备名称",
+      "type" : "input",
+      "required" : true,
+      "placeholder" : null,
+      "options" : null
+    }, {
+      "fieldName" : "device_location",
+      "label" : "设备位置",
+      "type" : "input",
+      "required" : true,
+      "placeholder" : null,
+      "options" : null
+    }, {
+      "fieldName" : "plan_name",
+      "label" : "巡检计划名称",
+      "type" : "input",
+      "required" : true,
+      "placeholder" : null,
+      "options" : null
+    }, {
+      "fieldName" : "inspector",
+      "label" : "巡检人",
+      "type" : "input",
+      "required" : true,
+      "placeholder" : null,
+      "options" : null
+    }, {
+      "fieldName" : "inspection_time",
+      "label" : "巡检时间",
+      "type" : "datetime",
+      "required" : true,
+      "placeholder" : null,
+      "options" : null
+    }, {
+      "fieldName" : "status",
+      "label" : "状态",
+      "type" : "select",
+      "required" : true,
+      "placeholder" : null,
+      "options" : "pending:待巡检,completed:已完成,abnormal:异常"
+    }, {
+      "fieldName" : "exception_desc",
+      "label" : "异常描述",
+      "type" : "textarea",
+      "required" : false,
+      "placeholder" : null,
+      "options" : null
+    }, {
+      "fieldName" : "rectification_status",
+      "label" : "整改状态",
+      "type" : "select",
+      "required" : false,
+      "placeholder" : null,
+      "options" : "none:无需整改,pending:待整改,rectified:已整改"
+    }, {
+      "fieldName" : "rectification_measure",
+      "label" : "整改措施",
+      "type" : "textarea",
+      "required" : false,
+      "placeholder" : null,
+      "options" : null
+    }, {
+      "fieldName" : "rectification_person",
+      "label" : "整改责任人",
+      "type" : "input",
+      "required" : false,
+      "placeholder" : null,
+      "options" : null
+    }, {
+      "fieldName" : "rectification_time",
+      "label" : "整改完成时间",
+      "type" : "datetime",
+      "required" : false,
+      "placeholder" : null,
+      "options" : null
+    } ]
+  }, {
+    "pageName" : "巡检详情",
+    "pageType" : null,
+    "path" : null,
+    "component" : null,
+    "fields" : [ {
+      "fieldName" : "device_name",
+      "label" : "设备名称",
+      "type" : "input",
+      "required" : false,
+      "placeholder" : null,
+      "options" : null
+    }, {
+      "fieldName" : "device_location",
+      "label" : "设备位置",
+      "type" : "input",
+      "required" : false,
+      "placeholder" : null,
+      "options" : null
+    }, {
+      "fieldName" : "plan_name",
+      "label" : "巡检计划名称",
+      "type" : "input",
+      "required" : false,
+      "placeholder" : null,
+      "options" : null
+    }, {
+      "fieldName" : "inspector",
+      "label" : "巡检人",
+      "type" : "input",
+      "required" : false,
+      "placeholder" : null,
+      "options" : null
+    }, {
+      "fieldName" : "inspection_time",
+      "label" : "巡检时间",
+      "type" : "datetime",
+      "required" : false,
+      "placeholder" : null,
+      "options" : null
+    }, {
+      "fieldName" : "status",
+      "label" : "状态",
+      "type" : "select",
+      "required" : false,
+      "placeholder" : null,
+      "options" : "pending:待巡检,completed:已完成,abnormal:异常"
+    }, {
+      "fieldName" : "exception_desc",
+      "label" : "异常描述",
+      "type" : "textarea",
+      "required" : false,
+      "placeholder" : null,
+      "options" : null
+    }, {
+      "fieldName" : "rectification_status",
+      "label" : "整改状态",
+      "type" : "select",
+      "required" : false,
+      "placeholder" : null,
+      "options" : "none:无需整改,pending:待整改,rectified:已整改"
+    }, {
+      "fieldName" : "rectification_measure",
+      "label" : "整改措施",
+      "type" : "textarea",
+      "required" : false,
+      "placeholder" : null,
+      "options" : null
+    }, {
+      "fieldName" : "rectification_person",
+      "label" : "整改责任人",
+      "type" : "input",
+      "required" : false,
+      "placeholder" : null,
+      "options" : null
+    }, {
+      "fieldName" : "rectification_time",
+      "label" : "整改完成时间",
+      "type" : "datetime",
+      "required" : false,
+      "placeholder" : null,
+      "options" : null
+    } ]
+  }, {
+    "pageName" : "巡检统计",
+    "pageType" : null,
+    "path" : null,
+    "component" : null,
+    "fields" : [ {
+      "fieldName" : "start_time",
+      "label" : "开始时间",
+      "type" : "date",
+      "required" : true,
+      "placeholder" : null,
+      "options" : null
+    }, {
+      "fieldName" : "end_time",
+      "label" : "结束时间",
+      "type" : "date",
+      "required" : true,
+      "placeholder" : null,
+      "options" : null
+    } ]
+  } ],
+  "apis" : [ {
+    "apiName" : null,
+    "method" : "GET",
+    "path" : "/api/biz/inspection/list",
+    "description" : "巡检列表查询"
+  }, {
+    "apiName" : null,
+    "method" : "GET",
+    "path" : "/api/biz/inspection/{id}",
+    "description" : "巡检详情"
+  }, {
+    "apiName" : null,
+    "method" : "POST",
+    "path" : "/api/biz/inspection",
+    "description" : "新增巡检"
+  }, {
+    "apiName" : null,
+    "method" : "PUT",
+    "path" : "/api/biz/inspection/{id}",
+    "description" : "编辑巡检"
+  }, {
+    "apiName" : null,
+    "method" : "DELETE",
+    "path" : "/api/biz/inspection/{id}",
+    "description" : "删除巡检"
+  }, {
+    "apiName" : null,
+    "method" : "GET",
+    "path" : "/api/biz/inspection/statistics",
+    "description" : "巡检统计分析"
+  } ],
+  "permissions" : [ {
+    "permissionCode" : "inspection:list",
+    "permissionName" : "巡检列表查询",
+    "moduleName" : null
+  }, {
+    "permissionCode" : "inspection:add",
+    "permissionName" : "新增巡检",
+    "moduleName" : null
+  }, {
+    "permissionCode" : "inspection:edit",
+    "permissionName" : "编辑巡检",
+    "moduleName" : null
+  }, {
+    "permissionCode" : "inspection:delete",
+    "permissionName" : "删除巡检",
+    "moduleName" : null
+  }, {
+    "permissionCode" : "inspection:statistics",
+    "permissionName" : "巡检统计分析",
+    "moduleName" : null
+  } ],
+  "menus" : [ {
+    "menuName" : "设备巡检",
+    "path" : "/module-runtime/inspection",
+    "component" : "ModuleRuntime",
+    "parentId" : 0,
+    "icon" : null,
+    "sortOrder" : null,
+    "menuType" : 2
+  } ]
+}

@@ -1,0 +1,315 @@
+{
+  "moduleName" : "客户回访管理",
+  "moduleCode" : "customer_visit",
+  "description" : "客户回访管理模块，记录客户回访信息，支持统计分析",
+  "projectId" : 1,
+  "modelConfigId" : null,
+  "tables" : [ {
+    "tableName" : "biz_customer_visit_main",
+    "tableComment" : "客户回访主表",
+    "columns" : [ {
+      "columnName" : "id",
+      "dataType" : "BIGINT",
+      "comment" : "主键",
+      "nullable" : false,
+      "defaultValue" : null,
+      "primaryKey" : true,
+      "autoIncrement" : true
+    }, {
+      "columnName" : "customer_name",
+      "dataType" : "VARCHAR(100)",
+      "comment" : "客户名称",
+      "nullable" : false,
+      "defaultValue" : null,
+      "primaryKey" : false,
+      "autoIncrement" : false
+    }, {
+      "columnName" : "visit_time",
+      "dataType" : "DATETIME",
+      "comment" : "回访时间",
+      "nullable" : false,
+      "defaultValue" : null,
+      "primaryKey" : false,
+      "autoIncrement" : false
+    }, {
+      "columnName" : "visit_method",
+      "dataType" : "VARCHAR(20)",
+      "comment" : "回访方式",
+      "nullable" : false,
+      "defaultValue" : "'电话'",
+      "primaryKey" : false,
+      "autoIncrement" : false
+    }, {
+      "columnName" : "visit_result",
+      "dataType" : "TEXT",
+      "comment" : "回访结果",
+      "nullable" : true,
+      "defaultValue" : null,
+      "primaryKey" : false,
+      "autoIncrement" : false
+    }, {
+      "columnName" : "follower",
+      "dataType" : "VARCHAR(50)",
+      "comment" : "跟进人",
+      "nullable" : false,
+      "defaultValue" : null,
+      "primaryKey" : false,
+      "autoIncrement" : false
+    }, {
+      "columnName" : "status",
+      "dataType" : "VARCHAR(20)",
+      "comment" : "状态：pending-待处理，completed-已完成，cancelled-已取消",
+      "nullable" : false,
+      "defaultValue" : "'pending'",
+      "primaryKey" : false,
+      "autoIncrement" : false
+    } ]
+  } ],
+  "pages" : [ {
+    "pageName" : "回访列表",
+    "pageType" : null,
+    "path" : "/customer_visit/list",
+    "component" : null,
+    "fields" : [ {
+      "fieldName" : "customer_name",
+      "label" : "客户名称",
+      "type" : "input",
+      "required" : null,
+      "placeholder" : null,
+      "options" : null
+    }, {
+      "fieldName" : "visit_time",
+      "label" : "回访时间",
+      "type" : "datetime",
+      "required" : null,
+      "placeholder" : null,
+      "options" : null
+    }, {
+      "fieldName" : "visit_method",
+      "label" : "回访方式",
+      "type" : "select",
+      "required" : null,
+      "placeholder" : null,
+      "options" : "电话:电话,邮件:邮件,上门:上门,其他:其他"
+    }, {
+      "fieldName" : "follower",
+      "label" : "跟进人",
+      "type" : "input",
+      "required" : null,
+      "placeholder" : null,
+      "options" : null
+    }, {
+      "fieldName" : "status",
+      "label" : "状态",
+      "type" : "select",
+      "required" : null,
+      "placeholder" : null,
+      "options" : "pending:待处理,completed:已完成,cancelled:已取消"
+    } ]
+  }, {
+    "pageName" : "新增回访",
+    "pageType" : null,
+    "path" : "/customer_visit/add",
+    "component" : null,
+    "fields" : [ {
+      "fieldName" : "customer_name",
+      "label" : "客户名称",
+      "type" : "input",
+      "required" : true,
+      "placeholder" : null,
+      "options" : null
+    }, {
+      "fieldName" : "visit_time",
+      "label" : "回访时间",
+      "type" : "datetime",
+      "required" : true,
+      "placeholder" : null,
+      "options" : null
+    }, {
+      "fieldName" : "visit_method",
+      "label" : "回访方式",
+      "type" : "select",
+      "required" : true,
+      "placeholder" : null,
+      "options" : "电话:电话,邮件:邮件,上门:上门,其他:其他"
+    }, {
+      "fieldName" : "visit_result",
+      "label" : "回访结果",
+      "type" : "textarea",
+      "required" : null,
+      "placeholder" : null,
+      "options" : null
+    }, {
+      "fieldName" : "follower",
+      "label" : "跟进人",
+      "type" : "input",
+      "required" : true,
+      "placeholder" : null,
+      "options" : null
+    }, {
+      "fieldName" : "status",
+      "label" : "状态",
+      "type" : "select",
+      "required" : null,
+      "placeholder" : null,
+      "options" : "pending:待处理,completed:已完成,cancelled:已取消"
+    } ]
+  }, {
+    "pageName" : "编辑回访",
+    "pageType" : null,
+    "path" : "/customer_visit/edit/:id",
+    "component" : null,
+    "fields" : [ {
+      "fieldName" : "customer_name",
+      "label" : "客户名称",
+      "type" : "input",
+      "required" : true,
+      "placeholder" : null,
+      "options" : null
+    }, {
+      "fieldName" : "visit_time",
+      "label" : "回访时间",
+      "type" : "datetime",
+      "required" : true,
+      "placeholder" : null,
+      "options" : null
+    }, {
+      "fieldName" : "visit_method",
+      "label" : "回访方式",
+      "type" : "select",
+      "required" : true,
+      "placeholder" : null,
+      "options" : "电话:电话,邮件:邮件,上门:上门,其他:其他"
+    }, {
+      "fieldName" : "visit_result",
+      "label" : "回访结果",
+      "type" : "textarea",
+      "required" : null,
+      "placeholder" : null,
+      "options" : null
+    }, {
+      "fieldName" : "follower",
+      "label" : "跟进人",
+      "type" : "input",
+      "required" : true,
+      "placeholder" : null,
+      "options" : null
+    }, {
+      "fieldName" : "status",
+      "label" : "状态",
+      "type" : "select",
+      "required" : null,
+      "placeholder" : null,
+      "options" : "pending:待处理,completed:已完成,cancelled:已取消"
+    } ]
+  }, {
+    "pageName" : "回访详情",
+    "pageType" : null,
+    "path" : "/customer_visit/detail/:id",
+    "component" : null,
+    "fields" : [ {
+      "fieldName" : "customer_name",
+      "label" : "客户名称",
+      "type" : "input",
+      "required" : null,
+      "placeholder" : null,
+      "options" : null
+    }, {
+      "fieldName" : "visit_time",
+      "label" : "回访时间",
+      "type" : "datetime",
+      "required" : null,
+      "placeholder" : null,
+      "options" : null
+    }, {
+      "fieldName" : "visit_method",
+      "label" : "回访方式",
+      "type" : "select",
+      "required" : null,
+      "placeholder" : null,
+      "options" : "电话:电话,邮件:邮件,上门:上门,其他:其他"
+    }, {
+      "fieldName" : "visit_result",
+      "label" : "回访结果",
+      "type" : "textarea",
+      "required" : null,
+      "placeholder" : null,
+      "options" : null
+    }, {
+      "fieldName" : "follower",
+      "label" : "跟进人",
+      "type" : "input",
+      "required" : null,
+      "placeholder" : null,
+      "options" : null
+    }, {
+      "fieldName" : "status",
+      "label" : "状态",
+      "type" : "select",
+      "required" : null,
+      "placeholder" : null,
+      "options" : "pending:待处理,completed:已完成,cancelled:已取消"
+    } ]
+  } ],
+  "apis" : [ {
+    "apiName" : null,
+    "method" : "GET",
+    "path" : "/api/biz/customer_visit/list",
+    "description" : "分页查询回访列表"
+  }, {
+    "apiName" : null,
+    "method" : "GET",
+    "path" : "/api/biz/customer_visit/{id}",
+    "description" : "根据ID查询回访详情"
+  }, {
+    "apiName" : null,
+    "method" : "POST",
+    "path" : "/api/biz/customer_visit",
+    "description" : "新增回访记录"
+  }, {
+    "apiName" : null,
+    "method" : "PUT",
+    "path" : "/api/biz/customer_visit/{id}",
+    "description" : "编辑回访记录"
+  }, {
+    "apiName" : null,
+    "method" : "DELETE",
+    "path" : "/api/biz/customer_visit/{id}",
+    "description" : "删除回访记录"
+  }, {
+    "apiName" : null,
+    "method" : "GET",
+    "path" : "/api/biz/customer_visit/statistics",
+    "description" : "回访统计分析接口"
+  } ],
+  "permissions" : [ {
+    "permissionCode" : "customer_visit:list",
+    "permissionName" : "回访列表查询",
+    "moduleName" : null
+  }, {
+    "permissionCode" : "customer_visit:add",
+    "permissionName" : "新增回访",
+    "moduleName" : null
+  }, {
+    "permissionCode" : "customer_visit:edit",
+    "permissionName" : "编辑回访",
+    "moduleName" : null
+  }, {
+    "permissionCode" : "customer_visit:delete",
+    "permissionName" : "删除回访",
+    "moduleName" : null
+  }, {
+    "permissionCode" : "customer_visit:statistics",
+    "permissionName" : "回访统计分析",
+    "moduleName" : null
+  } ],
+  "menus" : [ {
+    "menuName" : "客户回访管理",
+    "path" : "/module-runtime/customer_visit",
+    "component" : "ModuleRuntime",
+    "parentId" : 0,
+    "icon" : null,
+    "sortOrder" : null,
+    "menuType" : 2
+  } ]
+}

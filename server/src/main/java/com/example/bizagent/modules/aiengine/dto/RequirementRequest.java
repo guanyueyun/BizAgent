@@ -3,6 +3,8 @@ package com.example.bizagent.modules.aiengine.dto;
 
 import lombok.Data;
 
+import java.util.List;
+
 @Data
 public class RequirementRequest {
 
@@ -14,4 +16,6 @@ public class RequirementRequest {
     private Boolean needImportExport;
     private Boolean needStatistics;
     private Boolean needNotification;
+    private List<String> agentAssistants;
+    private List<String> toolAssistants;
 }

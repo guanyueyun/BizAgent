@@ -1,0 +1,769 @@
+{
+  "moduleName" : "合同管理",
+  "moduleCode" : "contract",
+  "description" : "生成一个合同续签提醒管理模块，模块用于销售和法务跟踪客户合同续签。业务对象包含合同编号、客户名称、合同金额、签约日期、到期日期、负责人、续签状态、提醒时间、备注。核心流程包括新增合同、编辑合同、查看详情、到期提醒、续签审批、导入导出合同清单、按状态和到期月份统计。权限需要包含列表、新增、编辑、删除、审批、导入、导出、统计和消息提醒。",
+  "projectId" : 1,
+  "tables" : [ {
+    "tableName" : "biz_contract_main",
+    "tableComment" : "contract主表",
+    "columns" : [ {
+      "columnName" : "id",
+      "dataType" : "BIGINT",
+      "comment" : "主键",
+      "nullable" : false,
+      "defaultValue" : null,
+      "primaryKey" : true,
+      "autoIncrement" : true
+    }, {
+      "columnName" : "biz_no",
+      "dataType" : "VARCHAR(50)",
+      "comment" : "业务编号",
+      "nullable" : false,
+      "defaultValue" : null,
+      "primaryKey" : false,
+      "autoIncrement" : false
+    }, {
+      "columnName" : "name",
+      "dataType" : "VARCHAR(100)",
+      "comment" : "名称",
+      "nullable" : false,
+      "defaultValue" : null,
+      "primaryKey" : false,
+      "autoIncrement" : false
+    }, {
+      "columnName" : "owner_name",
+      "dataType" : "VARCHAR(100)",
+      "comment" : "负责人",
+      "nullable" : true,
+      "defaultValue" : null,
+      "primaryKey" : false,
+      "autoIncrement" : false
+    }, {
+      "columnName" : "customer_name",
+      "dataType" : "VARCHAR(100)",
+      "comment" : "客户名称",
+      "nullable" : true,
+      "defaultValue" : null,
+      "primaryKey" : false,
+      "autoIncrement" : false
+    }, {
+      "columnName" : "amount",
+      "dataType" : "DECIMAL(18,2)",
+      "comment" : "金额",
+      "nullable" : true,
+      "defaultValue" : null,
+      "primaryKey" : false,
+      "autoIncrement" : false
+    }, {
+      "columnName" : "biz_date",
+      "dataType" : "DATE",
+      "comment" : "业务日期",
+      "nullable" : true,
+      "defaultValue" : null,
+      "primaryKey" : false,
+      "autoIncrement" : false
+    }, {
+      "columnName" : "biz_time",
+      "dataType" : "DATETIME",
+      "comment" : "业务时间",
+      "nullable" : true,
+      "defaultValue" : null,
+      "primaryKey" : false,
+      "autoIncrement" : false
+    }, {
+      "columnName" : "status",
+      "dataType" : "VARCHAR(30)",
+      "comment" : "状态",
+      "nullable" : false,
+      "defaultValue" : "'draft'",
+      "primaryKey" : false,
+      "autoIncrement" : false
+    }, {
+      "columnName" : "remark",
+      "dataType" : "VARCHAR(500)",
+      "comment" : "备注",
+      "nullable" : true,
+      "defaultValue" : null,
+      "primaryKey" : false,
+      "autoIncrement" : false
+    } ]
+  }, {
+    "tableName" : "biz_contract_approval",
+    "tableComment" : "审批记录",
+    "columns" : [ {
+      "columnName" : "id",
+      "dataType" : "BIGINT",
+      "comment" : "主键",
+      "nullable" : false,
+      "defaultValue" : null,
+      "primaryKey" : true,
+      "autoIncrement" : true
+    }, {
+      "columnName" : "biz_id",
+      "dataType" : "BIGINT",
+      "comment" : "业务数据ID",
+      "nullable" : false,
+      "defaultValue" : null,
+      "primaryKey" : false,
+      "autoIncrement" : false
+    }, {
+      "columnName" : "node_name",
+      "dataType" : "VARCHAR(100)",
+      "comment" : "审批节点",
+      "nullable" : false,
+      "defaultValue" : null,
+      "primaryKey" : false,
+      "autoIncrement" : false
+    }, {
+      "columnName" : "approver",
+      "dataType" : "VARCHAR(100)",
+      "comment" : "审批人",
+      "nullable" : true,
+      "defaultValue" : null,
+      "primaryKey" : false,
+      "autoIncrement" : false
+    }, {
+      "columnName" : "approval_status",
+      "dataType" : "VARCHAR(30)",
+      "comment" : "审批状态",
+      "nullable" : false,
+      "defaultValue" : "'pending'",
+      "primaryKey" : false,
+      "autoIncrement" : false
+    }, {
+      "columnName" : "approval_comment",
+      "dataType" : "VARCHAR(500)",
+      "comment" : "审批意见",
+      "nullable" : true,
+      "defaultValue" : null,
+      "primaryKey" : false,
+      "autoIncrement" : false
+    }, {
+      "columnName" : "approval_time",
+      "dataType" : "DATETIME",
+      "comment" : "审批时间",
+      "nullable" : true,
+      "defaultValue" : null,
+      "primaryKey" : false,
+      "autoIncrement" : false
+    } ]
+  }, {
+    "tableName" : "biz_contract_stat_day",
+    "tableComment" : "日统计",
+    "columns" : [ {
+      "columnName" : "id",
+      "dataType" : "BIGINT",
+      "comment" : "主键",
+      "nullable" : false,
+      "defaultValue" : null,
+      "primaryKey" : true,
+      "autoIncrement" : true
+    }, {
+      "columnName" : "stat_date",
+      "dataType" : "DATE",
+      "comment" : "统计日期",
+      "nullable" : false,
+      "defaultValue" : null,
+      "primaryKey" : false,
+      "autoIncrement" : false
+    }, {
+      "columnName" : "total_count",
+      "dataType" : "INT",
+      "comment" : "总数量",
+      "nullable" : false,
+      "defaultValue" : "0",
+      "primaryKey" : false,
+      "autoIncrement" : false
+    }, {
+      "columnName" : "done_count",
+      "dataType" : "INT",
+      "comment" : "完成数量",
+      "nullable" : false,
+      "defaultValue" : "0",
+      "primaryKey" : false,
+      "autoIncrement" : false
+    }, {
+      "columnName" : "exception_count",
+      "dataType" : "INT",
+      "comment" : "异常数量",
+      "nullable" : false,
+      "defaultValue" : "0",
+      "primaryKey" : false,
+      "autoIncrement" : false
+    } ]
+  }, {
+    "tableName" : "biz_contract_notification",
+    "tableComment" : "消息提醒",
+    "columns" : [ {
+      "columnName" : "id",
+      "dataType" : "BIGINT",
+      "comment" : "主键",
+      "nullable" : false,
+      "defaultValue" : null,
+      "primaryKey" : true,
+      "autoIncrement" : true
+    }, {
+      "columnName" : "biz_id",
+      "dataType" : "BIGINT",
+      "comment" : "业务数据ID",
+      "nullable" : false,
+      "defaultValue" : null,
+      "primaryKey" : false,
+      "autoIncrement" : false
+    }, {
+      "columnName" : "receiver",
+      "dataType" : "VARCHAR(100)",
+      "comment" : "接收人",
+      "nullable" : true,
+      "defaultValue" : null,
+      "primaryKey" : false,
+      "autoIncrement" : false
+    }, {
+      "columnName" : "message_title",
+      "dataType" : "VARCHAR(200)",
+      "comment" : "消息标题",
+      "nullable" : false,
+      "defaultValue" : null,
+      "primaryKey" : false,
+      "autoIncrement" : false
+    }, {
+      "columnName" : "message_content",
+      "dataType" : "VARCHAR(500)",
+      "comment" : "消息内容",
+      "nullable" : true,
+      "defaultValue" : null,
+      "primaryKey" : false,
+      "autoIncrement" : false
+    }, {
+      "columnName" : "read_status",
+      "dataType" : "VARCHAR(30)",
+      "comment" : "阅读状态",
+      "nullable" : false,
+      "defaultValue" : "'unread'",
+      "primaryKey" : false,
+      "autoIncrement" : false
+    } ]
+  } ],
+  "pages" : [ {
+    "pageName" : "合同管理列表",
+    "pageType" : "list",
+    "path" : "/contract/list",
+    "component" : "modules/contract/List",
+    "fields" : [ {
+      "fieldName" : "biz_no",
+      "label" : "业务编号",
+      "type" : "input",
+      "required" : true,
+      "placeholder" : "请输入业务编号",
+      "options" : null
+    }, {
+      "fieldName" : "name",
+      "label" : "名称",
+      "type" : "input",
+      "required" : true,
+      "placeholder" : "请输入名称",
+      "options" : null
+    }, {
+      "fieldName" : "owner_name",
+      "label" : "负责人",
+      "type" : "input",
+      "required" : false,
+      "placeholder" : "请输入负责人",
+      "options" : null
+    }, {
+      "fieldName" : "customer_name",
+      "label" : "客户名称",
+      "type" : "input",
+      "required" : false,
+      "placeholder" : "请输入客户名称",
+      "options" : null
+    }, {
+      "fieldName" : "amount",
+      "label" : "金额",
+      "type" : "number",
+      "required" : false,
+      "placeholder" : "请输入金额",
+      "options" : null
+    }, {
+      "fieldName" : "biz_date",
+      "label" : "业务日期",
+      "type" : "date",
+      "required" : false,
+      "placeholder" : "请输入业务日期",
+      "options" : null
+    }, {
+      "fieldName" : "biz_time",
+      "label" : "业务时间",
+      "type" : "datetime",
+      "required" : false,
+      "placeholder" : "请输入业务时间",
+      "options" : null
+    }, {
+      "fieldName" : "status",
+      "label" : "状态",
+      "type" : "select",
+      "required" : true,
+      "placeholder" : "请输入状态",
+      "options" : "draft:草稿,submitted:已提交,approved:已通过,rejected:已驳回,normal:正常,disabled:停用"
+    }, {
+      "fieldName" : "remark",
+      "label" : "备注",
+      "type" : "textarea",
+      "required" : false,
+      "placeholder" : "请输入备注",
+      "options" : null
+    } ]
+  }, {
+    "pageName" : "合同管理新增",
+    "pageType" : "add",
+    "path" : "/contract/add",
+    "component" : "modules/contract/Form",
+    "fields" : [ {
+      "fieldName" : "biz_no",
+      "label" : "业务编号",
+      "type" : "input",
+      "required" : true,
+      "placeholder" : "请输入业务编号",
+      "options" : null
+    }, {
+      "fieldName" : "name",
+      "label" : "名称",
+      "type" : "input",
+      "required" : true,
+      "placeholder" : "请输入名称",
+      "options" : null
+    }, {
+      "fieldName" : "owner_name",
+      "label" : "负责人",
+      "type" : "input",
+      "required" : false,
+      "placeholder" : "请输入负责人",
+      "options" : null
+    }, {
+      "fieldName" : "customer_name",
+      "label" : "客户名称",
+      "type" : "input",
+      "required" : false,
+      "placeholder" : "请输入客户名称",
+      "options" : null
+    }, {
+      "fieldName" : "amount",
+      "label" : "金额",
+      "type" : "number",
+      "required" : false,
+      "placeholder" : "请输入金额",
+      "options" : null
+    }, {
+      "fieldName" : "biz_date",
+      "label" : "业务日期",
+      "type" : "date",
+      "required" : false,
+      "placeholder" : "请输入业务日期",
+      "options" : null
+    }, {
+      "fieldName" : "biz_time",
+      "label" : "业务时间",
+      "type" : "datetime",
+      "required" : false,
+      "placeholder" : "请输入业务时间",
+      "options" : null
+    }, {
+      "fieldName" : "status",
+      "label" : "状态",
+      "type" : "select",
+      "required" : true,
+      "placeholder" : "请输入状态",
+      "options" : "draft:草稿,submitted:已提交,approved:已通过,rejected:已驳回,normal:正常,disabled:停用"
+    }, {
+      "fieldName" : "remark",
+      "label" : "备注",
+      "type" : "textarea",
+      "required" : false,
+      "placeholder" : "请输入备注",
+      "options" : null
+    } ]
+  }, {
+    "pageName" : "合同管理编辑",
+    "pageType" : "edit",
+    "path" : "/contract/edit/:id",
+    "component" : "modules/contract/Form",
+    "fields" : [ {
+      "fieldName" : "biz_no",
+      "label" : "业务编号",
+      "type" : "input",
+      "required" : true,
+      "placeholder" : "请输入业务编号",
+      "options" : null
+    }, {
+      "fieldName" : "name",
+      "label" : "名称",
+      "type" : "input",
+      "required" : true,
+      "placeholder" : "请输入名称",
+      "options" : null
+    }, {
+      "fieldName" : "owner_name",
+      "label" : "负责人",
+      "type" : "input",
+      "required" : false,
+      "placeholder" : "请输入负责人",
+      "options" : null
+    }, {
+      "fieldName" : "customer_name",
+      "label" : "客户名称",
+      "type" : "input",
+      "required" : false,
+      "placeholder" : "请输入客户名称",
+      "options" : null
+    }, {
+      "fieldName" : "amount",
+      "label" : "金额",
+      "type" : "number",
+      "required" : false,
+      "placeholder" : "请输入金额",
+      "options" : null
+    }, {
+      "fieldName" : "biz_date",
+      "label" : "业务日期",
+      "type" : "date",
+      "required" : false,
+      "placeholder" : "请输入业务日期",
+      "options" : null
+    }, {
+      "fieldName" : "biz_time",
+      "label" : "业务时间",
+      "type" : "datetime",
+      "required" : false,
+      "placeholder" : "请输入业务时间",
+      "options" : null
+    }, {
+      "fieldName" : "status",
+      "label" : "状态",
+      "type" : "select",
+      "required" : true,
+      "placeholder" : "请输入状态",
+      "options" : "draft:草稿,submitted:已提交,approved:已通过,rejected:已驳回,normal:正常,disabled:停用"
+    }, {
+      "fieldName" : "remark",
+      "label" : "备注",
+      "type" : "textarea",
+      "required" : false,
+      "placeholder" : "请输入备注",
+      "options" : null
+    } ]
+  }, {
+    "pageName" : "合同管理详情",
+    "pageType" : "detail",
+    "path" : "/contract/detail/:id",
+    "component" : "modules/contract/Detail",
+    "fields" : [ {
+      "fieldName" : "biz_no",
+      "label" : "业务编号",
+      "type" : "input",
+      "required" : true,
+      "placeholder" : "请输入业务编号",
+      "options" : null
+    }, {
+      "fieldName" : "name",
+      "label" : "名称",
+      "type" : "input",
+      "required" : true,
+      "placeholder" : "请输入名称",
+      "options" : null
+    }, {
+      "fieldName" : "owner_name",
+      "label" : "负责人",
+      "type" : "input",
+      "required" : false,
+      "placeholder" : "请输入负责人",
+      "options" : null
+    }, {
+      "fieldName" : "customer_name",
+      "label" : "客户名称",
+      "type" : "input",
+      "required" : false,
+      "placeholder" : "请输入客户名称",
+      "options" : null
+    }, {
+      "fieldName" : "amount",
+      "label" : "金额",
+      "type" : "number",
+      "required" : false,
+      "placeholder" : "请输入金额",
+      "options" : null
+    }, {
+      "fieldName" : "biz_date",
+      "label" : "业务日期",
+      "type" : "date",
+      "required" : false,
+      "placeholder" : "请输入业务日期",
+      "options" : null
+    }, {
+      "fieldName" : "biz_time",
+      "label" : "业务时间",
+      "type" : "datetime",
+      "required" : false,
+      "placeholder" : "请输入业务时间",
+      "options" : null
+    }, {
+      "fieldName" : "status",
+      "label" : "状态",
+      "type" : "select",
+      "required" : true,
+      "placeholder" : "请输入状态",
+      "options" : "draft:草稿,submitted:已提交,approved:已通过,rejected:已驳回,normal:正常,disabled:停用"
+    }, {
+      "fieldName" : "remark",
+      "label" : "备注",
+      "type" : "textarea",
+      "required" : false,
+      "placeholder" : "请输入备注",
+      "options" : null
+    } ]
+  }, {
+    "pageName" : "合同管理统计",
+    "pageType" : "statistics",
+    "path" : "/contract/statistics",
+    "component" : "modules/contract/Statistics",
+    "fields" : [ {
+      "fieldName" : "biz_no",
+      "label" : "业务编号",
+      "type" : "input",
+      "required" : true,
+      "placeholder" : "请输入业务编号",
+      "options" : null
+    }, {
+      "fieldName" : "name",
+      "label" : "名称",
+      "type" : "input",
+      "required" : true,
+      "placeholder" : "请输入名称",
+      "options" : null
+    }, {
+      "fieldName" : "owner_name",
+      "label" : "负责人",
+      "type" : "input",
+      "required" : false,
+      "placeholder" : "请输入负责人",
+      "options" : null
+    }, {
+      "fieldName" : "customer_name",
+      "label" : "客户名称",
+      "type" : "input",
+      "required" : false,
+      "placeholder" : "请输入客户名称",
+      "options" : null
+    }, {
+      "fieldName" : "amount",
+      "label" : "金额",
+      "type" : "number",
+      "required" : false,
+      "placeholder" : "请输入金额",
+      "options" : null
+    }, {
+      "fieldName" : "biz_date",
+      "label" : "业务日期",
+      "type" : "date",
+      "required" : false,
+      "placeholder" : "请输入业务日期",
+      "options" : null
+    }, {
+      "fieldName" : "biz_time",
+      "label" : "业务时间",
+      "type" : "datetime",
+      "required" : false,
+      "placeholder" : "请输入业务时间",
+      "options" : null
+    }, {
+      "fieldName" : "status",
+      "label" : "状态",
+      "type" : "select",
+      "required" : true,
+      "placeholder" : "请输入状态",
+      "options" : "draft:草稿,submitted:已提交,approved:已通过,rejected:已驳回,normal:正常,disabled:停用"
+    }, {
+      "fieldName" : "remark",
+      "label" : "备注",
+      "type" : "textarea",
+      "required" : false,
+      "placeholder" : "请输入备注",
+      "options" : null
+    } ]
+  }, {
+    "pageName" : "合同管理审批",
+    "pageType" : "approval",
+    "path" : "/contract/approval",
+    "component" : "modules/contract/Approval",
+    "fields" : [ {
+      "fieldName" : "biz_no",
+      "label" : "业务编号",
+      "type" : "input",
+      "required" : true,
+      "placeholder" : "请输入业务编号",
+      "options" : null
+    }, {
+      "fieldName" : "name",
+      "label" : "名称",
+      "type" : "input",
+      "required" : true,
+      "placeholder" : "请输入名称",
+      "options" : null
+    }, {
+      "fieldName" : "owner_name",
+      "label" : "负责人",
+      "type" : "input",
+      "required" : false,
+      "placeholder" : "请输入负责人",
+      "options" : null
+    }, {
+      "fieldName" : "customer_name",
+      "label" : "客户名称",
+      "type" : "input",
+      "required" : false,
+      "placeholder" : "请输入客户名称",
+      "options" : null
+    }, {
+      "fieldName" : "amount",
+      "label" : "金额",
+      "type" : "number",
+      "required" : false,
+      "placeholder" : "请输入金额",
+      "options" : null
+    }, {
+      "fieldName" : "biz_date",
+      "label" : "业务日期",
+      "type" : "date",
+      "required" : false,
+      "placeholder" : "请输入业务日期",
+      "options" : null
+    }, {
+      "fieldName" : "biz_time",
+      "label" : "业务时间",
+      "type" : "datetime",
+      "required" : false,
+      "placeholder" : "请输入业务时间",
+      "options" : null
+    }, {
+      "fieldName" : "status",
+      "label" : "状态",
+      "type" : "select",
+      "required" : true,
+      "placeholder" : "请输入状态",
+      "options" : "draft:草稿,submitted:已提交,approved:已通过,rejected:已驳回,normal:正常,disabled:停用"
+    }, {
+      "fieldName" : "remark",
+      "label" : "备注",
+      "type" : "textarea",
+      "required" : false,
+      "placeholder" : "请输入备注",
+      "options" : null
+    } ]
+  } ],
+  "apis" : [ {
+    "apiName" : "分页查询",
+    "method" : "GET",
+    "path" : "/api/biz/contract/list",
+    "description" : "分页查询接口"
+  }, {
+    "apiName" : "新增",
+    "method" : "POST",
+    "path" : "/api/biz/contract",
+    "description" : "新增接口"
+  }, {
+    "apiName" : "修改",
+    "method" : "PUT",
+    "path" : "/api/biz/contract/{id}",
+    "description" : "修改接口"
+  }, {
+    "apiName" : "删除",
+    "method" : "DELETE",
+    "path" : "/api/biz/contract/{id}",
+    "description" : "删除接口"
+  }, {
+    "apiName" : "详情",
+    "method" : "GET",
+    "path" : "/api/biz/contract/{id}",
+    "description" : "详情接口"
+  }, {
+    "apiName" : "导入",
+    "method" : "POST",
+    "path" : "/api/biz/contract/import",
+    "description" : "导入接口"
+  }, {
+    "apiName" : "导出",
+    "method" : "GET",
+    "path" : "/api/biz/contract/export",
+    "description" : "导出接口"
+  }, {
+    "apiName" : "统计",
+    "method" : "GET",
+    "path" : "/api/biz/contract/statistics",
+    "description" : "统计接口"
+  }, {
+    "apiName" : "提交审批",
+    "method" : "POST",
+    "path" : "/api/biz/contract/{id}/submit",
+    "description" : "提交审批接口"
+  }, {
+    "apiName" : "审批处理",
+    "method" : "POST",
+    "path" : "/api/biz/contract/{id}/approve",
+    "description" : "审批处理接口"
+  }, {
+    "apiName" : "消息提醒",
+    "method" : "POST",
+    "path" : "/api/biz/contract/{id}/notify",
+    "description" : "消息提醒接口"
+  }, {
+    "apiName" : "提醒列表",
+    "method" : "GET",
+    "path" : "/api/biz/contract/notifications",
+    "description" : "提醒列表接口"
+  } ],
+  "permissions" : [ {
+    "permissionCode" : "contract:list",
+    "permissionName" : "合同管理查看",
+    "moduleName" : "合同管理"
+  }, {
+    "permissionCode" : "contract:add",
+    "permissionName" : "合同管理新增",
+    "moduleName" : "合同管理"
+  }, {
+    "permissionCode" : "contract:edit",
+    "permissionName" : "合同管理编辑",
+    "moduleName" : "合同管理"
+  }, {
+    "permissionCode" : "contract:delete",
+    "permissionName" : "合同管理删除",
+    "moduleName" : "合同管理"
+  }, {
+    "permissionCode" : "contract:import",
+    "permissionName" : "合同管理导入",
+    "moduleName" : "合同管理"
+  }, {
+    "permissionCode" : "contract:export",
+    "permissionName" : "合同管理导出",
+    "moduleName" : "合同管理"
+  }, {
+    "permissionCode" : "contract:statistics",
+    "permissionName" : "合同管理统计",
+    "moduleName" : "合同管理"
+  }, {
+    "permissionCode" : "contract:approve",
+    "permissionName" : "合同管理审批",
+    "moduleName" : "合同管理"
+  }, {
+    "permissionCode" : "contract:notify",
+    "permissionName" : "合同管理提醒",
+    "moduleName" : "合同管理"
+  } ],
+  "menus" : [ {
+    "menuName" : "合同管理",
+    "path" : "/module-runtime/contract",
+    "component" : "ModuleRuntime",
+    "parentId" : 0,
+    "icon" : "component",
+    "sortOrder" : 100,
+    "menuType" : 2
+  } ]
+}

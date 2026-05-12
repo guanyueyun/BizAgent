@@ -1,0 +1,479 @@
+{
+  "moduleName" : "车辆管理",
+  "moduleCode" : "vehicle",
+  "description" : "企业车辆信息管理模块，支持车辆档案维护、状态跟踪、统计分析与审批流程。",
+  "projectId" : 1,
+  "modelConfigId" : 2,
+  "tables" : [ {
+    "tableName" : "biz_vehicle_main",
+    "tableComment" : "车辆主表",
+    "columns" : [ {
+      "columnName" : "id",
+      "dataType" : "BIGINT",
+      "comment" : "主键",
+      "nullable" : false,
+      "defaultValue" : null,
+      "primaryKey" : true,
+      "autoIncrement" : true
+    }, {
+      "columnName" : "plate_number",
+      "dataType" : "VARCHAR(100)",
+      "comment" : "车牌号",
+      "nullable" : false,
+      "defaultValue" : null,
+      "primaryKey" : false,
+      "autoIncrement" : false
+    }, {
+      "columnName" : "brand",
+      "dataType" : "VARCHAR(100)",
+      "comment" : "品牌",
+      "nullable" : true,
+      "defaultValue" : null,
+      "primaryKey" : false,
+      "autoIncrement" : false
+    }, {
+      "columnName" : "model",
+      "dataType" : "VARCHAR(100)",
+      "comment" : "型号",
+      "nullable" : true,
+      "defaultValue" : null,
+      "primaryKey" : false,
+      "autoIncrement" : false
+    }, {
+      "columnName" : "color",
+      "dataType" : "VARCHAR(100)",
+      "comment" : "颜色",
+      "nullable" : true,
+      "defaultValue" : null,
+      "primaryKey" : false,
+      "autoIncrement" : false
+    }, {
+      "columnName" : "purchase_date",
+      "dataType" : "VARCHAR(100)",
+      "comment" : "购买日期",
+      "nullable" : true,
+      "defaultValue" : null,
+      "primaryKey" : false,
+      "autoIncrement" : false
+    }, {
+      "columnName" : "mileage",
+      "dataType" : "VARCHAR(100)",
+      "comment" : "当前里程(公里)",
+      "nullable" : true,
+      "defaultValue" : "0.00",
+      "primaryKey" : false,
+      "autoIncrement" : false
+    }, {
+      "columnName" : "status",
+      "dataType" : "VARCHAR(100)",
+      "comment" : "状态: idle-空闲, in_use-使用中, maintenance-维修中, retired-已报废",
+      "nullable" : false,
+      "defaultValue" : "'idle'",
+      "primaryKey" : false,
+      "autoIncrement" : false
+    }, {
+      "columnName" : "approval_status",
+      "dataType" : "VARCHAR(100)",
+      "comment" : "审批状态: draft-草稿, pending-待审批, approved-已通过, rejected-已驳回",
+      "nullable" : false,
+      "defaultValue" : "'draft'",
+      "primaryKey" : false,
+      "autoIncrement" : false
+    }, {
+      "columnName" : "driver",
+      "dataType" : "VARCHAR(100)",
+      "comment" : "当前驾驶员",
+      "nullable" : true,
+      "defaultValue" : null,
+      "primaryKey" : false,
+      "autoIncrement" : false
+    }, {
+      "columnName" : "remark",
+      "dataType" : "VARCHAR(100)",
+      "comment" : "备注",
+      "nullable" : true,
+      "defaultValue" : null,
+      "primaryKey" : false,
+      "autoIncrement" : false
+    } ]
+  } ],
+  "pages" : [ {
+    "pageName" : "车辆列表",
+    "pageType" : null,
+    "path" : null,
+    "component" : null,
+    "fields" : [ {
+      "fieldName" : null,
+      "label" : "车牌号",
+      "type" : "input",
+      "required" : false,
+      "placeholder" : null,
+      "options" : null
+    }, {
+      "fieldName" : null,
+      "label" : "品牌",
+      "type" : "input",
+      "required" : false,
+      "placeholder" : null,
+      "options" : null
+    }, {
+      "fieldName" : null,
+      "label" : "型号",
+      "type" : "input",
+      "required" : false,
+      "placeholder" : null,
+      "options" : null
+    }, {
+      "fieldName" : null,
+      "label" : "状态",
+      "type" : "select",
+      "required" : false,
+      "placeholder" : null,
+      "options" : "idle:空闲,in_use:使用中,maintenance:维修中,retired:已报废"
+    }, {
+      "fieldName" : null,
+      "label" : "审批状态",
+      "type" : "select",
+      "required" : false,
+      "placeholder" : null,
+      "options" : "draft:草稿,pending:待审批,approved:已通过,rejected:已驳回"
+    }, {
+      "fieldName" : null,
+      "label" : "当前驾驶员",
+      "type" : "input",
+      "required" : false,
+      "placeholder" : null,
+      "options" : null
+    } ]
+  }, {
+    "pageName" : "新增车辆",
+    "pageType" : null,
+    "path" : null,
+    "component" : null,
+    "fields" : [ {
+      "fieldName" : null,
+      "label" : "车牌号",
+      "type" : "input",
+      "required" : true,
+      "placeholder" : null,
+      "options" : null
+    }, {
+      "fieldName" : null,
+      "label" : "品牌",
+      "type" : "input",
+      "required" : false,
+      "placeholder" : null,
+      "options" : null
+    }, {
+      "fieldName" : null,
+      "label" : "型号",
+      "type" : "input",
+      "required" : false,
+      "placeholder" : null,
+      "options" : null
+    }, {
+      "fieldName" : null,
+      "label" : "颜色",
+      "type" : "input",
+      "required" : false,
+      "placeholder" : null,
+      "options" : null
+    }, {
+      "fieldName" : null,
+      "label" : "购买日期",
+      "type" : "date",
+      "required" : false,
+      "placeholder" : null,
+      "options" : null
+    }, {
+      "fieldName" : null,
+      "label" : "当前里程(公里)",
+      "type" : "number",
+      "required" : false,
+      "placeholder" : null,
+      "options" : null
+    }, {
+      "fieldName" : null,
+      "label" : "状态",
+      "type" : "select",
+      "required" : true,
+      "placeholder" : null,
+      "options" : "idle:空闲,in_use:使用中,maintenance:维修中,retired:已报废"
+    }, {
+      "fieldName" : null,
+      "label" : "当前驾驶员",
+      "type" : "input",
+      "required" : false,
+      "placeholder" : null,
+      "options" : null
+    }, {
+      "fieldName" : null,
+      "label" : "备注",
+      "type" : "textarea",
+      "required" : false,
+      "placeholder" : null,
+      "options" : null
+    } ]
+  }, {
+    "pageName" : "编辑车辆",
+    "pageType" : null,
+    "path" : null,
+    "component" : null,
+    "fields" : [ {
+      "fieldName" : null,
+      "label" : "车牌号",
+      "type" : "input",
+      "required" : true,
+      "placeholder" : null,
+      "options" : null
+    }, {
+      "fieldName" : null,
+      "label" : "品牌",
+      "type" : "input",
+      "required" : false,
+      "placeholder" : null,
+      "options" : null
+    }, {
+      "fieldName" : null,
+      "label" : "型号",
+      "type" : "input",
+      "required" : false,
+      "placeholder" : null,
+      "options" : null
+    }, {
+      "fieldName" : null,
+      "label" : "颜色",
+      "type" : "input",
+      "required" : false,
+      "placeholder" : null,
+      "options" : null
+    }, {
+      "fieldName" : null,
+      "label" : "购买日期",
+      "type" : "date",
+      "required" : false,
+      "placeholder" : null,
+      "options" : null
+    }, {
+      "fieldName" : null,
+      "label" : "当前里程(公里)",
+      "type" : "number",
+      "required" : false,
+      "placeholder" : null,
+      "options" : null
+    }, {
+      "fieldName" : null,
+      "label" : "状态",
+      "type" : "select",
+      "required" : true,
+      "placeholder" : null,
+      "options" : "idle:空闲,in_use:使用中,maintenance:维修中,retired:已报废"
+    }, {
+      "fieldName" : null,
+      "label" : "当前驾驶员",
+      "type" : "input",
+      "required" : false,
+      "placeholder" : null,
+      "options" : null
+    }, {
+      "fieldName" : null,
+      "label" : "备注",
+      "type" : "textarea",
+      "required" : false,
+      "placeholder" : null,
+      "options" : null
+    } ]
+  }, {
+    "pageName" : "车辆详情",
+    "pageType" : null,
+    "path" : null,
+    "component" : null,
+    "fields" : [ {
+      "fieldName" : null,
+      "label" : "车牌号",
+      "type" : "input",
+      "required" : false,
+      "placeholder" : null,
+      "options" : null
+    }, {
+      "fieldName" : null,
+      "label" : "品牌",
+      "type" : "input",
+      "required" : false,
+      "placeholder" : null,
+      "options" : null
+    }, {
+      "fieldName" : null,
+      "label" : "型号",
+      "type" : "input",
+      "required" : false,
+      "placeholder" : null,
+      "options" : null
+    }, {
+      "fieldName" : null,
+      "label" : "颜色",
+      "type" : "input",
+      "required" : false,
+      "placeholder" : null,
+      "options" : null
+    }, {
+      "fieldName" : null,
+      "label" : "购买日期",
+      "type" : "date",
+      "required" : false,
+      "placeholder" : null,
+      "options" : null
+    }, {
+      "fieldName" : null,
+      "label" : "当前里程(公里)",
+      "type" : "number",
+      "required" : false,
+      "placeholder" : null,
+      "options" : null
+    }, {
+      "fieldName" : null,
+      "label" : "状态",
+      "type" : "select",
+      "required" : false,
+      "placeholder" : null,
+      "options" : "idle:空闲,in_use:使用中,maintenance:维修中,retired:已报废"
+    }, {
+      "fieldName" : null,
+      "label" : "审批状态",
+      "type" : "select",
+      "required" : false,
+      "placeholder" : null,
+      "options" : "draft:草稿,pending:待审批,approved:已通过,rejected:已驳回"
+    }, {
+      "fieldName" : null,
+      "label" : "当前驾驶员",
+      "type" : "input",
+      "required" : false,
+      "placeholder" : null,
+      "options" : null
+    }, {
+      "fieldName" : null,
+      "label" : "备注",
+      "type" : "textarea",
+      "required" : false,
+      "placeholder" : null,
+      "options" : null
+    } ]
+  }, {
+    "pageName" : "车辆统计",
+    "pageType" : null,
+    "path" : null,
+    "component" : null,
+    "fields" : [ {
+      "fieldName" : null,
+      "label" : "按状态统计",
+      "type" : "select",
+      "required" : false,
+      "placeholder" : null,
+      "options" : "idle:空闲,in_use:使用中,maintenance:维修中,retired:已报废"
+    } ]
+  }, {
+    "pageName" : "车辆审批",
+    "pageType" : null,
+    "path" : null,
+    "component" : null,
+    "fields" : [ {
+      "fieldName" : null,
+      "label" : "审批操作",
+      "type" : "select",
+      "required" : true,
+      "placeholder" : null,
+      "options" : "approved:通过,rejected:驳回"
+    }, {
+      "fieldName" : null,
+      "label" : "审批意见",
+      "type" : "textarea",
+      "required" : false,
+      "placeholder" : null,
+      "options" : null
+    } ]
+  } ],
+  "apis" : [ {
+    "apiName" : null,
+    "method" : "GET",
+    "path" : "/api/biz/vehicle/list",
+    "description" : "分页查询车辆列表"
+  }, {
+    "apiName" : null,
+    "method" : "GET",
+    "path" : "/api/biz/vehicle/{id}",
+    "description" : "查询车辆详情"
+  }, {
+    "apiName" : null,
+    "method" : "POST",
+    "path" : "/api/biz/vehicle",
+    "description" : "新增车辆"
+  }, {
+    "apiName" : null,
+    "method" : "PUT",
+    "path" : "/api/biz/vehicle/{id}",
+    "description" : "更新车辆信息"
+  }, {
+    "apiName" : null,
+    "method" : "DELETE",
+    "path" : "/api/biz/vehicle/{id}",
+    "description" : "删除车辆"
+  }, {
+    "apiName" : null,
+    "method" : "GET",
+    "path" : "/api/biz/vehicle/statistics",
+    "description" : "车辆统计接口（按状态、品牌等维度）"
+  }, {
+    "apiName" : null,
+    "method" : "POST",
+    "path" : "/api/biz/vehicle/{id}/submit",
+    "description" : "提交车辆审批"
+  }, {
+    "apiName" : null,
+    "method" : "POST",
+    "path" : "/api/biz/vehicle/{id}/approve",
+    "description" : "审批车辆（通过/驳回）"
+  } ],
+  "permissions" : [ {
+    "permissionCode" : "vehicle:list",
+    "permissionName" : "车辆列表查看",
+    "moduleName" : null
+  }, {
+    "permissionCode" : "vehicle:add",
+    "permissionName" : "新增车辆",
+    "moduleName" : null
+  }, {
+    "permissionCode" : "vehicle:edit",
+    "permissionName" : "编辑车辆",
+    "moduleName" : null
+  }, {
+    "permissionCode" : "vehicle:delete",
+    "permissionName" : "删除车辆",
+    "moduleName" : null
+  }, {
+    "permissionCode" : "vehicle:detail",
+    "permissionName" : "查看车辆详情",
+    "moduleName" : null
+  }, {
+    "permissionCode" : "vehicle:statistics",
+    "permissionName" : "车辆统计",
+    "moduleName" : null
+  }, {
+    "permissionCode" : "vehicle:submit",
+    "permissionName" : "提交审批",
+    "moduleName" : null
+  }, {
+    "permissionCode" : "vehicle:approve",
+    "permissionName" : "审批车辆",
+    "moduleName" : null
+  } ],
+  "menus" : [ {
+    "menuName" : "车辆管理",
+    "path" : "/module-runtime/vehicle",
+    "component" : "ModuleRuntime",
+    "parentId" : 0,
+    "icon" : null,
+    "sortOrder" : null,
+    "menuType" : 2
+  } ]
+}

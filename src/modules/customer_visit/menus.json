@@ -1,0 +1,9 @@
+[ {
+  "menuName" : "客户回访管理",
+  "path" : "/module-runtime/customer_visit",
+  "component" : "ModuleRuntime",
+  "parentId" : 0,
+  "icon" : null,
+  "sortOrder" : null,
+  "menuType" : 2
+} ]

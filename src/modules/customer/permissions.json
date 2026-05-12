@@ -1,0 +1,21 @@
+[ {
+  "permissionCode" : "customer:list",
+  "permissionName" : "客户列表查询",
+  "moduleName" : null
+}, {
+  "permissionCode" : "customer:add",
+  "permissionName" : "新增客户",
+  "moduleName" : null
+}, {
+  "permissionCode" : "customer:edit",
+  "permissionName" : "编辑客户",
+  "moduleName" : null
+}, {
+  "permissionCode" : "customer:delete",
+  "permissionName" : "删除客户",
+  "moduleName" : null
+}, {
+  "permissionCode" : "customer:statistics",
+  "permissionName" : "查看客户统计",
+  "moduleName" : null
+} ]

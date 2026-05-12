@@ -1,0 +1,9 @@
+[ {
+  "menuName" : "车辆管理",
+  "path" : "/module-runtime/vehicle",
+  "component" : "ModuleRuntime",
+  "parentId" : 0,
+  "icon" : null,
+  "sortOrder" : null,
+  "menuType" : 2
+} ]

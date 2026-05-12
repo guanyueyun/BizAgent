@@ -1,7 +1,7 @@
 {
   "moduleName" : "业务模块",
   "moduleCode" : "module",
-  "description" : "业务目标：实现停车场内车辆信息的统一管理，支持车辆入场、出场、信息维护及查询。\n\n核心对象：车辆\n\n页面：\n- 车辆列表页：展示所有在场车辆和已出场车辆记录，支持按车牌号、入场时间等条件筛选。\n- 车辆详情页：查看单一车辆的完整信息。\n- 新增车辆页：用于车辆入场登记。\n\n字段：\n- 车牌号（必填，文本）\n- 车辆类型（下拉选择：小型车、大型车、新能源车等）\n- 入场时间（必填，日期时间）\n- 出场时间（日期时间，可为空）\n- 停车位编号（文本，可选）\n- 车主姓名（文本，可选）\n- 联系电话（文本，可选）\n- 车辆状态（下拉选择：在场、已出场）\n\n流程：\n- 入场流程：用户通过新增车辆页录入车牌号、车辆类型、入场时间等信息，保存后生成一条在场车辆记录。\n- 出场流程：用户在车辆列表页选择在场车辆，点击出场操作，系统自动记录出场时间并变更车辆状态为已出场。\n\n权限：\n- 管理员：可查看、新增、编辑、删除所有车辆记录。\n- 普通用户：仅可查看和新增车辆记录，不可编辑或删除。\n\n统计：无\n\n审批：无\n\n导入导出：无\n\n移动端：无\n\n待确认：车辆类型的具体分类列表；停车位编号是否需要与停车场车位表关联；是否支持无牌车辆入场。",
+  "description" : "业务目标：实现停车场车辆信息的登记、查询与维护管理。\n核心对象：车辆。\n页面：车辆管理列表页、车辆新增/编辑页。\n字段：车牌号（必填，唯一）、车辆类型（待确认：小车/货车/其他）、入场时间、出场时间、车主姓名、联系电话、备注。\n流程：支持车辆入场登记（新增记录）、出场登记（更新出场时间）、车辆信息编辑与删除。\n权限：待确认：是否需要按角色控制查看、新增、编辑、删除权限。\n统计：暂无。\n审批：暂无。\n导入导出：暂无。\n移动端：暂无。",
   "projectId" : 1,
   "tables" : [ {
     "tableName" : "biz_module_main",
@@ -42,14 +42,6 @@
       "columnName" : "contact_phone",
       "dataType" : "VARCHAR(30)",
       "comment" : "联系电话",
-      "nullable" : true,
-      "defaultValue" : null,
-      "primaryKey" : false,
-      "autoIncrement" : false
-    }, {
-      "columnName" : "biz_date",
-      "dataType" : "DATE",
-      "comment" : "业务日期",
       "nullable" : true,
       "defaultValue" : null,
       "primaryKey" : false,
@@ -114,13 +106,6 @@
       "placeholder" : "请输入联系电话",
       "options" : null
     }, {
-      "fieldName" : "biz_date",
-      "label" : "业务日期",
-      "type" : "date",
-      "required" : false,
-      "placeholder" : "请输入业务日期",
-      "options" : null
-    }, {
       "fieldName" : "biz_time",
       "label" : "业务时间",
       "type" : "datetime",
@@ -174,13 +159,6 @@
       "type" : "input",
       "required" : false,
       "placeholder" : "请输入联系电话",
-      "options" : null
-    }, {
-      "fieldName" : "biz_date",
-      "label" : "业务日期",
-      "type" : "date",
-      "required" : false,
-      "placeholder" : "请输入业务日期",
       "options" : null
     }, {
       "fieldName" : "biz_time",
@@ -238,13 +216,6 @@
       "placeholder" : "请输入联系电话",
       "options" : null
     }, {
-      "fieldName" : "biz_date",
-      "label" : "业务日期",
-      "type" : "date",
-      "required" : false,
-      "placeholder" : "请输入业务日期",
-      "options" : null
-    }, {
       "fieldName" : "biz_time",
       "label" : "业务时间",
       "type" : "datetime",
@@ -300,11 +271,59 @@
       "placeholder" : "请输入联系电话",
       "options" : null
     }, {
-      "fieldName" : "biz_date",
-      "label" : "业务日期",
-      "type" : "date",
+      "fieldName" : "biz_time",
+      "label" : "业务时间",
+      "type" : "datetime",
       "required" : false,
-      "placeholder" : "请输入业务日期",
+      "placeholder" : "请输入业务时间",
+      "options" : null
+    }, {
+      "fieldName" : "status",
+      "label" : "状态",
+      "type" : "select",
+      "required" : true,
+      "placeholder" : "请输入状态",
+      "options" : "draft:草稿,submitted:已提交,approved:已通过,rejected:已驳回,normal:正常,disabled:停用"
+    }, {
+      "fieldName" : "remark",
+      "label" : "备注",
+      "type" : "textarea",
+      "required" : false,
+      "placeholder" : "请输入备注",
+      "options" : null
+    } ]
+  }, {
+    "pageName" : "业务模块移动端",
+    "pageType" : "mobile",
+    "path" : "/module/mobile",
+    "component" : "modules/module/Mobile",
+    "fields" : [ {
+      "fieldName" : "biz_no",
+      "label" : "业务编号",
+      "type" : "input",
+      "required" : true,
+      "placeholder" : "请输入业务编号",
+      "options" : null
+    }, {
+      "fieldName" : "name",
+      "label" : "名称",
+      "type" : "input",
+      "required" : true,
+      "placeholder" : "请输入名称",
+      "options" : null
+    }, {
+      "fieldName" : "owner_name",
+      "label" : "负责人",
+      "type" : "input",
+      "required" : false,
+      "placeholder" : "请输入负责人",
+      "options" : null
+    }, {
+      "fieldName" : "contact_phone",
+      "label" : "联系电话",
+      "type" : "input",
+      "required" : false,
+      "placeholder" : "请输入联系电话",
       "options" : null
     }, {
       "fieldName" : "biz_time",

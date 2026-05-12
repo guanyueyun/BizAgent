@@ -1,0 +1,21 @@
+[ {
+  "permissionCode" : "customer_visit:list",
+  "permissionName" : "回访列表查询",
+  "moduleName" : null
+}, {
+  "permissionCode" : "customer_visit:add",
+  "permissionName" : "新增回访",
+  "moduleName" : null
+}, {
+  "permissionCode" : "customer_visit:edit",
+  "permissionName" : "编辑回访",
+  "moduleName" : null
+}, {
+  "permissionCode" : "customer_visit:delete",
+  "permissionName" : "删除回访",
+  "moduleName" : null
+}, {
+  "permissionCode" : "customer_visit:statistics",
+  "permissionName" : "回访统计分析",
+  "moduleName" : null
+} ]

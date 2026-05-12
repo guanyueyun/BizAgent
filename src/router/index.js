@@ -18,6 +18,11 @@ const routes = [
     component: () => import('../views/AiGenerate.vue')
   },
   {
+    path: '/ai/console',
+    name: 'AiConsole',
+    component: () => import('../views/AiConsole.vue')
+  },
+  {
     path: '/system/user',
     name: 'SysUser',
     component: () => import('../views/system/UserList.vue')

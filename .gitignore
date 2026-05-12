@@ -5,6 +5,7 @@ node_modules/
 dist/
 target/
 *.jar
+!server/.mvn/wrapper/maven-wrapper.jar
 
 # Logs
 *.log

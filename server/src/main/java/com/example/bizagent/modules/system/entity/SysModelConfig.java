@@ -20,6 +20,7 @@ public class SysModelConfig extends BaseEntity {
     private BigDecimal temperature;
     private Integer maxTokens;
     private Integer timeoutSeconds;
+    private Integer retryCount;
     private Integer defaultFlag;
     private Integer status;
     private String description;

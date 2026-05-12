@@ -1,0 +1,22 @@
+CREATE TABLE IF NOT EXISTS biz_vehicle_main (
+  id BIGINT AUTO_INCREMENT PRIMARY KEY COMMENT '主键',
+  plate_number VARCHAR(100) NOT NULL COMMENT '车牌号',
+  brand VARCHAR(100) COMMENT '品牌',
+  model VARCHAR(100) COMMENT '型号',
+  color VARCHAR(100) COMMENT '颜色',
+  purchase_date VARCHAR(100) COMMENT '购买日期',
+  mileage VARCHAR(100) DEFAULT '0.00' COMMENT '当前里程(公里)',
+  status VARCHAR(100) NOT NULL DEFAULT 'idle' COMMENT '状态: idle-空闲, in_use-使用中, maintenance-维修中, retired-已报废',
+  approval_status VARCHAR(100) NOT NULL DEFAULT 'draft' COMMENT '审批状态: draft-草稿, pending-待审批, approved-已通过, rejected-已驳回',
+  driver VARCHAR(100) COMMENT '当前驾驶员',
+  remark VARCHAR(100) COMMENT '备注',
+  create_by VARCHAR(100) COMMENT '创建人',
+  create_time DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  update_by VARCHAR(100) COMMENT '更新人',
+  update_time DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  del_flag VARCHAR(10) DEFAULT '0' COMMENT '删除标记 0-正常 1-删除',
+  project_id BIGINT COMMENT '项目ID',
+  KEY idx_project_id (project_id),
+  KEY idx_status (status),
+  KEY idx_create_time (create_time)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='车辆主表';

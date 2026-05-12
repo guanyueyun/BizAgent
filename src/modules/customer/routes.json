@@ -1,0 +1,227 @@
+[ {
+  "pageName" : "客户列表",
+  "pageType" : null,
+  "path" : "/customer/list",
+  "component" : null,
+  "fields" : [ {
+    "fieldName" : null,
+    "label" : null,
+    "type" : "input",
+    "required" : null,
+    "placeholder" : null,
+    "options" : null
+  }, {
+    "fieldName" : null,
+    "label" : null,
+    "type" : "input",
+    "required" : null,
+    "placeholder" : null,
+    "options" : null
+  }, {
+    "fieldName" : null,
+    "label" : null,
+    "type" : "input",
+    "required" : null,
+    "placeholder" : null,
+    "options" : null
+  }, {
+    "fieldName" : null,
+    "label" : null,
+    "type" : "input",
+    "required" : null,
+    "placeholder" : null,
+    "options" : null
+  }, {
+    "fieldName" : null,
+    "label" : null,
+    "type" : "input",
+    "required" : null,
+    "placeholder" : null,
+    "options" : null
+  }, {
+    "fieldName" : null,
+    "label" : null,
+    "type" : "input",
+    "required" : null,
+    "placeholder" : null,
+    "options" : null
+  }, {
+    "fieldName" : null,
+    "label" : null,
+    "type" : "select",
+    "required" : null,
+    "placeholder" : null,
+    "options" : "potential:潜在,contacted:已联系,negotiating:洽谈中,converted:已成交,lost:已流失"
+  } ]
+}, {
+  "pageName" : "新增客户",
+  "pageType" : null,
+  "path" : "/customer/add",
+  "component" : null,
+  "fields" : [ {
+    "fieldName" : null,
+    "label" : null,
+    "type" : "input",
+    "required" : null,
+    "placeholder" : null,
+    "options" : null
+  }, {
+    "fieldName" : null,
+    "label" : null,
+    "type" : "input",
+    "required" : null,
+    "placeholder" : null,
+    "options" : null
+  }, {
+    "fieldName" : null,
+    "label" : null,
+    "type" : "input",
+    "required" : null,
+    "placeholder" : null,
+    "options" : null
+  }, {
+    "fieldName" : null,
+    "label" : null,
+    "type" : "input",
+    "required" : null,
+    "placeholder" : null,
+    "options" : null
+  }, {
+    "fieldName" : null,
+    "label" : null,
+    "type" : "input",
+    "required" : null,
+    "placeholder" : null,
+    "options" : null
+  }, {
+    "fieldName" : null,
+    "label" : null,
+    "type" : "input",
+    "required" : null,
+    "placeholder" : null,
+    "options" : null
+  }, {
+    "fieldName" : null,
+    "label" : null,
+    "type" : "select",
+    "required" : null,
+    "placeholder" : null,
+    "options" : "potential:潜在,contacted:已联系,negotiating:洽谈中,converted:已成交,lost:已流失"
+  } ]
+}, {
+  "pageName" : "编辑客户",
+  "pageType" : null,
+  "path" : "/customer/edit/:id",
+  "component" : null,
+  "fields" : [ {
+    "fieldName" : null,
+    "label" : null,
+    "type" : "input",
+    "required" : null,
+    "placeholder" : null,
+    "options" : null
+  }, {
+    "fieldName" : null,
+    "label" : null,
+    "type" : "input",
+    "required" : null,
+    "placeholder" : null,
+    "options" : null
+  }, {
+    "fieldName" : null,
+    "label" : null,
+    "type" : "input",
+    "required" : null,
+    "placeholder" : null,
+    "options" : null
+  }, {
+    "fieldName" : null,
+    "label" : null,
+    "type" : "input",
+    "required" : null,
+    "placeholder" : null,
+    "options" : null
+  }, {
+    "fieldName" : null,
+    "label" : null,
+    "type" : "input",
+    "required" : null,
+    "placeholder" : null,
+    "options" : null
+  }, {
+    "fieldName" : null,
+    "label" : null,
+    "type" : "input",
+    "required" : null,
+    "placeholder" : null,
+    "options" : null
+  }, {
+    "fieldName" : null,
+    "label" : null,
+    "type" : "select",
+    "required" : null,
+    "placeholder" : null,
+    "options" : "potential:潜在,contacted:已联系,negotiating:洽谈中,converted:已成交,lost:已流失"
+  } ]
+}, {
+  "pageName" : "客户详情",
+  "pageType" : null,
+  "path" : "/customer/detail/:id",
+  "component" : null,
+  "fields" : [ {
+    "fieldName" : null,
+    "label" : null,
+    "type" : "input",
+    "required" : null,
+    "placeholder" : null,
+    "options" : null
+  }, {
+    "fieldName" : null,
+    "label" : null,
+    "type" : "input",
+    "required" : null,
+    "placeholder" : null,
+    "options" : null
+  }, {
+    "fieldName" : null,
+    "label" : null,
+    "type" : "input",
+    "required" : null,
+    "placeholder" : null,
+    "options" : null
+  }, {
+    "fieldName" : null,
+    "label" : null,
+    "type" : "input",
+    "required" : null,
+    "placeholder" : null,
+    "options" : null
+  }, {
+    "fieldName" : null,
+    "label" : null,
+    "type" : "input",
+    "required" : null,
+    "placeholder" : null,
+    "options" : null
+  }, {
+    "fieldName" : null,
+    "label" : null,
+    "type" : "input",
+    "required" : null,
+    "placeholder" : null,
+    "options" : null
+  }, {
+    "fieldName" : null,
+    "label" : null,
+    "type" : "select",
+    "required" : null,
+    "placeholder" : null,
+    "options" : "potential:潜在,contacted:已联系,negotiating:洽谈中,converted:已成交,lost:已流失"
+  } ]
+}, {
+  "pageName" : "客户统计",
+  "pageType" : null,
+  "path" : "/customer/statistics",
+  "component" : null,
+  "fields" : [ ]
+} ]

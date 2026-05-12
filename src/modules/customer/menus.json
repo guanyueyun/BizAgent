@@ -1,0 +1,9 @@
+[ {
+  "menuName" : "客户管理",
+  "path" : "/module-runtime/customer",
+  "component" : "ModuleRuntime",
+  "parentId" : 0,
+  "icon" : null,
+  "sortOrder" : null,
+  "menuType" : 2
+} ]

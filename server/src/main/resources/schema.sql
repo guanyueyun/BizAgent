@@ -72,7 +72,8 @@ CREATE TABLE IF NOT EXISTS sys_project (
     create_time DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
     update_by BIGINT COMMENT '更新人',
     update_time DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
-    del_flag INT DEFAULT 0 COMMENT '删除标志 0正常 1删除'
+    del_flag INT DEFAULT 0 COMMENT '删除标志 0正常 1删除',
+    project_id BIGINT DEFAULT 0 COMMENT '项目ID'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='项目表';
 
 CREATE TABLE IF NOT EXISTS sys_module (
@@ -116,6 +117,7 @@ CREATE TABLE IF NOT EXISTS sys_model_config (
     temperature DECIMAL(4,2) DEFAULT 0.70 COMMENT '温度',
     max_tokens INT DEFAULT 4096 COMMENT '最大Token数',
     timeout_seconds INT DEFAULT 60 COMMENT '超时时间秒',
+    retry_count INT DEFAULT 0 COMMENT '失败重试次数',
     default_flag INT DEFAULT 0 COMMENT '是否默认 0否 1是',
     status INT DEFAULT 1 COMMENT '状态 0禁用 1启用',
     description VARCHAR(500) COMMENT '描述',

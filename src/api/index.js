@@ -25,6 +25,80 @@ const withProject = (params = {}) => ({
   projectId: params.projectId || Number(localStorage.getItem('bizagent_project_id') || 1)
 })
 
+const readNdjsonStream = async (path, data, onEvent, options = {}) => {
+  const token = localStorage.getItem('bizagent_token')
+  const projectId = localStorage.getItem('bizagent_project_id') || '1'
+  const response = await fetch(`${request.defaults.baseURL}${path}`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json;charset=UTF-8',
+      Accept: 'application/x-ndjson;charset=UTF-8, application/json;charset=UTF-8',
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      'X-Project-Id': projectId
+    },
+    body: JSON.stringify(data),
+    signal: options.signal
+  })
+  if (!response.ok || !response.body) {
+    let message = `流式请求失败：${response.status}`
+    try {
+      const errorBody = await response.json()
+      message = errorBody?.message || errorBody?.data?.message || message
+    } catch (error) {
+      try {
+        const errorText = await response.text()
+        message = errorText || message
+      } catch (ignored) {
+        // keep status fallback
+      }
+    }
+    throw new Error(message)
+  }
+
+  const reader = response.body.getReader()
+  const decoder = new TextDecoder('utf-8')
+  let buffer = ''
+  let finalData = null
+
+  const handleLine = (line) => {
+    if (!line.trim()) return
+    const event = JSON.parse(line)
+    onEvent?.(event)
+    if (event.type === 'error') {
+      throw new Error(event.detail || event.title || '流式任务失败')
+    }
+    if (event.type === 'final') {
+      finalData = event.data
+    }
+  }
+
+  while (true) {
+    let chunk
+    try {
+      chunk = await reader.read()
+    } catch (error) {
+      if (finalData) {
+        return finalData
+      }
+      throw error
+    }
+    const { value, done } = chunk
+    if (done) break
+    buffer += decoder.decode(value, { stream: true })
+    const lines = buffer.split('\n')
+    buffer = lines.pop() || ''
+    for (const line of lines) {
+      handleLine(line)
+    }
+  }
+
+  if (buffer.trim()) {
+    handleLine(buffer)
+  }
+
+  return finalData
+}
+
 request.interceptors.response.use(
   (response) => response,
   (error) => {
@@ -48,14 +122,19 @@ export const authApi = {
 
 export const aiApi = {
   analyze: (data) => request.post('/ai/analyze', data, { timeout: 120000 }),
+  plan: (data) => request.post('/ai/plan', data, { timeout: 120000 }),
   optimize: (data) => request.post('/ai/optimize', data, { timeout: 120000 }),
   questions: (data) => request.post('/ai/questions', data, { timeout: 120000 }),
   generateFrontend: (data) => request.post('/ai/generate/frontend', data, { timeout: 120000 }),
   generateBackend: (data) => request.post('/ai/generate/backend', data, { timeout: 120000 }),
   generateSql: (data) => request.post('/ai/generate/sql', data, { timeout: 120000 }),
   preview: (data) => request.post('/ai/preview', data, { timeout: 120000 }),
+  check: (data) => request.post('/ai/check', data, { timeout: 120000 }),
   publish: (data) => request.post('/ai/publish', data, { timeout: 120000 }),
-  complete: (data) => request.post('/ai/complete', data, { timeout: 120000 })
+  complete: (data) => request.post('/ai/complete', data, { timeout: 120000 }),
+  completeStream: (data, onEvent, options) => readNdjsonStream('/ai/complete/stream', data, onEvent, options),
+  revise: (data) => request.post('/ai/revise', data, { timeout: 120000 }),
+  reviseStream: (data, onEvent, options) => readNdjsonStream('/ai/revise/stream', data, onEvent, options)
 }
 
 export const userApi = {

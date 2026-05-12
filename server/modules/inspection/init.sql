@@ -1,0 +1,23 @@
+CREATE TABLE IF NOT EXISTS biz_inspection_main (
+  id BIGINT AUTO_INCREMENT PRIMARY KEY COMMENT '主键',
+  device_name VARCHAR(100) NOT NULL COMMENT '设备名称',
+  device_location VARCHAR(100) NOT NULL COMMENT '设备位置',
+  plan_name VARCHAR(100) NOT NULL COMMENT '巡检计划名称',
+  inspector VARCHAR(100) NOT NULL COMMENT '巡检人',
+  inspection_time VARCHAR(100) NOT NULL COMMENT '巡检时间',
+  status VARCHAR(100) NOT NULL DEFAULT 'pending' COMMENT '状态：pending-待巡检，completed-已完成，abnormal-异常',
+  exception_desc VARCHAR(100) COMMENT '异常描述',
+  rectification_status VARCHAR(100) NOT NULL DEFAULT 'none' COMMENT '整改状态：none-无需整改，pending-待整改，rectified-已整改',
+  rectification_measure VARCHAR(100) COMMENT '整改措施',
+  rectification_person VARCHAR(100) COMMENT '整改责任人',
+  rectification_time VARCHAR(100) COMMENT '整改完成时间',
+  create_by VARCHAR(100) NOT NULL COMMENT '创建人',
+  create_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  update_by VARCHAR(100) NOT NULL COMMENT '更新人',
+  update_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  del_flag CHAR(1) NOT NULL DEFAULT '0' COMMENT '删除标志',
+  project_id BIGINT NOT NULL COMMENT '项目ID',
+  KEY idx_project_id (project_id),
+  KEY idx_status (status),
+  KEY idx_create_time (create_time)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='巡检主表';

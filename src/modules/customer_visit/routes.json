@@ -1,0 +1,186 @@
+[ {
+  "pageName" : "回访列表",
+  "pageType" : null,
+  "path" : "/customer_visit/list",
+  "component" : null,
+  "fields" : [ {
+    "fieldName" : "customer_name",
+    "label" : "客户名称",
+    "type" : "input",
+    "required" : null,
+    "placeholder" : null,
+    "options" : null
+  }, {
+    "fieldName" : "visit_time",
+    "label" : "回访时间",
+    "type" : "datetime",
+    "required" : null,
+    "placeholder" : null,
+    "options" : null
+  }, {
+    "fieldName" : "visit_method",
+    "label" : "回访方式",
+    "type" : "select",
+    "required" : null,
+    "placeholder" : null,
+    "options" : "电话:电话,邮件:邮件,上门:上门,其他:其他"
+  }, {
+    "fieldName" : "follower",
+    "label" : "跟进人",
+    "type" : "input",
+    "required" : null,
+    "placeholder" : null,
+    "options" : null
+  }, {
+    "fieldName" : "status",
+    "label" : "状态",
+    "type" : "select",
+    "required" : null,
+    "placeholder" : null,
+    "options" : "pending:待处理,completed:已完成,cancelled:已取消"
+  } ]
+}, {
+  "pageName" : "新增回访",
+  "pageType" : null,
+  "path" : "/customer_visit/add",
+  "component" : null,
+  "fields" : [ {
+    "fieldName" : "customer_name",
+    "label" : "客户名称",
+    "type" : "input",
+    "required" : true,
+    "placeholder" : null,
+    "options" : null
+  }, {
+    "fieldName" : "visit_time",
+    "label" : "回访时间",
+    "type" : "datetime",
+    "required" : true,
+    "placeholder" : null,
+    "options" : null
+  }, {
+    "fieldName" : "visit_method",
+    "label" : "回访方式",
+    "type" : "select",
+    "required" : true,
+    "placeholder" : null,
+    "options" : "电话:电话,邮件:邮件,上门:上门,其他:其他"
+  }, {
+    "fieldName" : "visit_result",
+    "label" : "回访结果",
+    "type" : "textarea",
+    "required" : null,
+    "placeholder" : null,
+    "options" : null
+  }, {
+    "fieldName" : "follower",
+    "label" : "跟进人",
+    "type" : "input",
+    "required" : true,
+    "placeholder" : null,
+    "options" : null
+  }, {
+    "fieldName" : "status",
+    "label" : "状态",
+    "type" : "select",
+    "required" : null,
+    "placeholder" : null,
+    "options" : "pending:待处理,completed:已完成,cancelled:已取消"
+  } ]
+}, {
+  "pageName" : "编辑回访",
+  "pageType" : null,
+  "path" : "/customer_visit/edit/:id",
+  "component" : null,
+  "fields" : [ {
+    "fieldName" : "customer_name",
+    "label" : "客户名称",
+    "type" : "input",
+    "required" : true,
+    "placeholder" : null,
+    "options" : null
+  }, {
+    "fieldName" : "visit_time",
+    "label" : "回访时间",
+    "type" : "datetime",
+    "required" : true,
+    "placeholder" : null,
+    "options" : null
+  }, {
+    "fieldName" : "visit_method",
+    "label" : "回访方式",
+    "type" : "select",
+    "required" : true,
+    "placeholder" : null,
+    "options" : "电话:电话,邮件:邮件,上门:上门,其他:其他"
+  }, {
+    "fieldName" : "visit_result",
+    "label" : "回访结果",
+    "type" : "textarea",
+    "required" : null,
+    "placeholder" : null,
+    "options" : null
+  }, {
+    "fieldName" : "follower",
+    "label" : "跟进人",
+    "type" : "input",
+    "required" : true,
+    "placeholder" : null,
+    "options" : null
+  }, {
+    "fieldName" : "status",
+    "label" : "状态",
+    "type" : "select",
+    "required" : null,
+    "placeholder" : null,
+    "options" : "pending:待处理,completed:已完成,cancelled:已取消"
+  } ]
+}, {
+  "pageName" : "回访详情",
+  "pageType" : null,
+  "path" : "/customer_visit/detail/:id",
+  "component" : null,
+  "fields" : [ {
+    "fieldName" : "customer_name",
+    "label" : "客户名称",
+    "type" : "input",
+    "required" : null,
+    "placeholder" : null,
+    "options" : null
+  }, {
+    "fieldName" : "visit_time",
+    "label" : "回访时间",
+    "type" : "datetime",
+    "required" : null,
+    "placeholder" : null,
+    "options" : null
+  }, {
+    "fieldName" : "visit_method",
+    "label" : "回访方式",
+    "type" : "select",
+    "required" : null,
+    "placeholder" : null,
+    "options" : "电话:电话,邮件:邮件,上门:上门,其他:其他"
+  }, {
+    "fieldName" : "visit_result",
+    "label" : "回访结果",
+    "type" : "textarea",
+    "required" : null,
+    "placeholder" : null,
+    "options" : null
+  }, {
+    "fieldName" : "follower",
+    "label" : "跟进人",
+    "type" : "input",
+    "required" : null,
+    "placeholder" : null,
+    "options" : null
+  }, {
+    "fieldName" : "status",
+    "label" : "状态",
+    "type" : "select",
+    "required" : null,
+    "placeholder" : null,
+    "options" : "pending:待处理,completed:已完成,cancelled:已取消"
+  } ]
+} ]

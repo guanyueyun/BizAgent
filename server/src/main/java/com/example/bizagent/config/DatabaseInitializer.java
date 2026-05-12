@@ -59,6 +59,7 @@ public class DatabaseInitializer {
                         temperature DECIMAL(4,2) DEFAULT 0.70 COMMENT '温度',
                         max_tokens INT DEFAULT 4096 COMMENT '最大Token数',
                         timeout_seconds INT DEFAULT 60 COMMENT '超时时间秒',
+                        retry_count INT DEFAULT 0 COMMENT '失败重试次数',
                         default_flag INT DEFAULT 0 COMMENT '是否默认 0否 1是',
                         status INT DEFAULT 1 COMMENT '状态 0禁用 1启用',
                         description VARCHAR(500) COMMENT '描述',
@@ -76,6 +77,8 @@ public class DatabaseInitializer {
             addColumnIfMissing(stmt, "sys_module", "back_path", "VARCHAR(255)");
             addColumnIfMissing(stmt, "sys_module", "design_json", "LONGTEXT");
             addColumnIfMissing(stmt, "sys_module", "lifecycle", "INT DEFAULT 0");
+            addColumnIfMissing(stmt, "sys_model_config", "retry_count", "INT DEFAULT 0");
+            addColumnIfMissing(stmt, "sys_project", "project_id", "BIGINT DEFAULT 0");
             stmt.execute("""
                     INSERT INTO sys_model_config
                     (id, config_name, provider, base_url, model_name, temperature, max_tokens, timeout_seconds, default_flag, status, description, project_id)

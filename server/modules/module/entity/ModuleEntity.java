@@ -17,7 +17,6 @@ public class ModuleEntity {
     private String name; // 名称
     private String owner_name; // 负责人
     private String contact_phone; // 联系电话
-    private java.time.LocalDate biz_date; // 业务日期
     private java.time.LocalDateTime biz_time; // 业务时间
     private String status; // 状态
     private String remark; // 备注

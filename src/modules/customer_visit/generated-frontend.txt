@@ -1,0 +1,466 @@
+// ========== api.js ==========
+import request from '../../api'
+
+export function listVisit(params) {
+  return request({
+    url: '/biz/customer_visit/list',
+    method: 'get',
+    params
+  })
+}
+
+export function getVisit(id) {
+  return request({
+    url: `/biz/customer_visit/${id}`,
+    method: 'get'
+  })
+}
+
+export function addVisit(data) {
+  return request({
+    url: '/biz/customer_visit',
+    method: 'post',
+    data
+  })
+}
+
+export function updateVisit(id, data) {
+  return request({
+    url: `/biz/customer_visit/${id}`,
+    method: 'put',
+    data
+  })
+}
+
+export function deleteVisit(id) {
+  return request({
+    url: `/biz/customer_visit/${id}`,
+    method: 'delete'
+  })
+}
+
+export function getVisitStatistics() {
+  return request({
+    url: '/biz/customer_visit/statistics',
+    method: 'get'
+  })
+}
+
+// ========== List.vue ==========
+<template>
+  <div>
+    <el-form :inline="true" :model="queryParams" class="search-form">
+      <el-form-item label="客户名称">
+        <el-input v-model="queryParams.customer_name" placeholder="请输入客户名称" clearable />
+      </el-form-item>
+      <el-form-item label="回访时间">
+        <el-date-picker
+          v-model="queryParams.visit_time"
+          type="datetime"
+          placeholder="选择回访时间"
+          value-format="YYYY-MM-DD HH:mm:ss"
+          clearable
+        />
+      </el-form-item>
+      <el-form-item label="回访方式">
+        <el-select v-model="queryParams.visit_method" placeholder="请选择回访方式" clearable>
+          <el-option label="电话" value="电话" />
+          <el-option label="邮件" value="邮件" />
+          <el-option label="上门" value="上门" />
+          <el-option label="其他" value="其他" />
+        </el-select>
+      </el-form-item>
+      <el-form-item label="跟进人">
+        <el-input v-model="queryParams.follower" placeholder="请输入跟进人" clearable />
+      </el-form-item>
+      <el-form-item label="状态">
+        <el-select v-model="queryParams.status" placeholder="请选择状态" clearable>
+          <el-option label="待处理" value="pending" />
+          <el-option label="已完成" value="completed" />
+          <el-option label="已取消" value="cancelled" />
+        </el-select>
+      </el-form-item>
+      <el-form-item>
+        <el-button type="primary" @click="handleQuery">查询</el-button>
+        <el-button @click="resetQuery">重置</el-button>
+      </el-form-item>
+    </el-form>
+
+    <el-row :gutter="10" class="mb8">
+      <el-col :span="1.5">
+        <el-button type="primary" plain @click="handleAdd">新增</el-button>
+      </el-col>
+      <el-col :span="1.5">
+        <el-button type="success" plain @click="handleStatistics">统计</el-button>
+      </el-col>
+    </el-row>
+
+    <el-table :data="visitList" v-loading="loading" border stripe>
+      <el-table-column label="客户名称" prop="customer_name" min-width="120" />
+      <el-table-column label="回访时间" prop="visit_time" min-width="160" />
+      <el-table-column label="回访方式" prop="visit_method" min-width="100" />
+      <el-table-column label="跟进人" prop="follower" min-width="100" />
+      <el-table-column label="状态" prop="status" min-width="100">
+        <template #default="scope">
+          <el-tag v-if="scope.row.status === 'pending'" type="warning">待处理</el-tag>
+          <el-tag v-else-if="scope.row.status === 'completed'" type="success">已完成</el-tag>
+          <el-tag v-else-if="scope.row.status === 'cancelled'" type="info">已取消</el-tag>
+          <span v-else>{{ scope.row.status }}</span>
+        </template>
+      </el-table-column>
+      <el-table-column label="操作" width="200" fixed="right">
+        <template #default="scope">
+          <el-button type="text" @click="handleDetail(scope.row)">详情</el-button>
+          <el-button type="text" @click="handleEdit(scope.row)">编辑</el-button>
+          <el-button type="text" style="color: red" @click="handleDelete(scope.row)">删除</el-button>
+        </template>
+      </el-table-column>
+    </el-table>
+
+    <el-pagination
+      v-show="total > 0"
+      :total="total"
+      v-model:page="queryParams.pageNum"
+      v-model:limit="queryParams.pageSize"
+      @pagination="getList"
+    />
+
+    <el-dialog :title="dialogTitle" v-model="dialogVisible" width="600px" append-to-body>
+      <Form :id="currentId" @success="handleSuccess" />
+    </el-dialog>
+
+    <el-dialog title="回访详情" v-model="detailVisible" width="700px" append-to-body>
+      <Detail :id="currentId" @edit="handleEditFromDetail" />
+    </el-dialog>
+
+    <el-dialog title="回访统计" v-model="statisticsVisible" width="800px" append-to-body>
+      <Statistics />
+    </el-dialog>
+  </div>
+</template>
+
+<script setup>
+import { ref, onMounted } from 'vue'
+import { ElMessage, ElMessageBox } from 'element-plus'
+import { listVisit, deleteVisit } from './api'
+import Form from './Form.vue'
+import Detail from './Detail.vue'
+import Statistics from './Statistics.vue'
+
+const loading = ref(false)
+const visitList = ref([])
+const total = ref(0)
+const queryParams = ref({
+  pageNum: 1,
+  pageSize: 10,
+  customer_name: '',
+  visit_time: '',
+  visit_method: '',
+  follower: '',
+  status: ''
+})
+const dialogVisible = ref(false)
+const dialogTitle = ref('')
+const currentId = ref(null)
+const detailVisible = ref(false)
+const statisticsVisible = ref(false)
+
+function getList() {
+  loading.value = true
+  listVisit(queryParams.value).then(res => {
+    visitList.value = res.data.rows || []
+    total.value = res.data.total || 0
+  }).catch(() => {
+    ElMessage.error('查询失败')
+  }).finally(() => {
+    loading.value = false
+  })
+}
+
+function handleQuery() {
+  queryParams.value.pageNum = 1
+  getList()
+}
+
+function resetQuery() {
+  queryParams.value = {
+    pageNum: 1,
+    pageSize: 10,
+    customer_name: '',
+    visit_time: '',
+    visit_method: '',
+    follower: '',
+    status: ''
+  }
+  getList()
+}
+
+function handleAdd() {
+  currentId.value = null
+  dialogTitle.value = '新增回访'
+  dialogVisible.value = true
+}
+
+function handleEdit(row) {
+  currentId.value = row.id
+  dialogTitle.value = '编辑回访'
+  dialogVisible.value = true
+}
+
+function handleDetail(row) {
+  currentId.value = row.id
+  detailVisible.value = true
+}
+
+function handleDelete(row) {
+  ElMessageBox.confirm('确认删除该回访记录吗？', '提示', {
+    confirmButtonText: '确定',
+    cancelButtonText: '取消',
+    type: 'warning'
+  }).then(() => {
+    deleteVisit(row.id).then(() => {
+      ElMessage.success('删除成功')
+      getList()
+    }).catch(() => {
+      ElMessage.error('删除失败')
+    })
+  }).catch(() => {})
+}
+
+function handleStatistics() {
+  statisticsVisible.value = true
+}
+
+function handleSuccess() {
+  dialogVisible.value = false
+  getList()
+}
+
+function handleEditFromDetail(id) {
+  detailVisible.value = false
+  currentId.value = id
+  dialogTitle.value = '编辑回访'
+  dialogVisible.value = true
+}
+
+onMounted(() => {
+  getList()
+})
+</script>
+
+<style scoped>
+.search-form {
+  margin-bottom: 20px;
+}
+.mb8 {
+  margin-bottom: 8px;
+}
+</style>
+
+// ========== Form.vue ==========
+<template>
+  <el-form ref="formRef" :model="formData" :rules="rules" label-width="100px">
+    <el-form-item label="客户名称" prop="customer_name">
+      <el-input v-model="formData.customer_name" placeholder="请输入客户名称" />
+    </el-form-item>
+    <el-form-item label="回访时间" prop="visit_time">
+      <el-date-picker
+        v-model="formData.visit_time"
+        type="datetime"
+        placeholder="选择回访时间"
+        value-format="YYYY-MM-DD HH:mm:ss"
+        style="width: 100%"
+      />
+    </el-form-item>
+    <el-form-item label="回访方式" prop="visit_method">
+      <el-select v-model="formData.visit_method" placeholder="请选择回访方式" style="width: 100%">
+        <el-option label="电话" value="电话" />
+        <el-option label="邮件" value="邮件" />
+        <el-option label="上门" value="上门" />
+        <el-option label="其他" value="其他" />
+      </el-select>
+    </el-form-item>
+    <el-form-item label="回访结果" prop="visit_result">
+      <el-input v-model="formData.visit_result" type="textarea" :rows="3" placeholder="请输入回访结果" />
+    </el-form-item>
+    <el-form-item label="跟进人" prop="follower">
+      <el-input v-model="formData.follower" placeholder="请输入跟进人" />
+    </el-form-item>
+    <el-form-item label="状态" prop="status">
+      <el-select v-model="formData.status" placeholder="请选择状态" style="width: 100%">
+        <el-option label="待处理" value="pending" />
+        <el-option label="已完成" value="completed" />
+        <el-option label="已取消" value="cancelled" />
+      </el-select>
+    </el-form-item>
+    <el-form-item>
+      <el-button type="primary" @click="handleSubmit" :loading="submitLoading">提交</el-button>
+      <el-button @click="handleCancel">取消</el-button>
+    </el-form-item>
+  </el-form>
+</template>
+
+<script setup>
+import { ref, onMounted, watch } from 'vue'
+import { ElMessage } from 'element-plus'
+import { getVisit, addVisit, updateVisit } from './api'
+
+const props = defineProps({
+  id: {
+    type: Number,
+    default: null
+  }
+})
+
+const emit = defineEmits(['success'])
+
+const formRef = ref(null)
+const formData = ref({
+  customer_name: '',
+  visit_time: '',
+  visit_method: '',
+  visit_result: '',
+  follower: '',
+  status: 'pending'
+})
+const submitLoading = ref(false)
+
+const rules = {
+  customer_name: [{ required: true, message: '客户名称不能为空', trigger: 'blur' }],
+  visit_time: [{ required: true, message: '回访时间不能为空', trigger: 'change' }],
+  visit_method: [{ required: true, message: '回访方式不能为空', trigger: 'change' }],
+  follower: [{ required: true, message: '跟进人不能为空', trigger: 'blur' }]
+}
+
+function loadDetail() {
+  if (props.id) {
+    getVisit(props.id).then(res => {
+      formData.value = res.data
+    }).catch(() => {
+      ElMessage.error('加载详情失败')
+    })
+  }
+}
+
+function handleSubmit() {
+  formRef.value.validate(valid => {
+    if (valid) {
+      submitLoading.value = true
+      const apiCall = props.id ? updateVisit(props.id, formData.value) : addVisit(formData.value)
+      apiCall.then(() => {
+        ElMessage.success(props.id ? '编辑成功' : '新增成功')
+        emit('success')
+      }).catch(() => {
+        ElMessage.error('操作失败')
+      }).finally(() => {
+        submitLoading.value = false
+      })
+    }
+  })
+}
+
+function handleCancel() {
+  emit('success')
+}
+
+onMounted(() => {
+  loadDetail()
+})
+</script>
+
+// ========== Detail.vue ==========
+<template>
+  <div>
+    <el-descriptions :column="2" border v-if="detailData">
+      <el-descriptions-item label="客户名称" :span="2">{{ detailData.customer_name }}</el-descriptions-item>
+      <el-descriptions-item label="回访时间" :span="2">{{ detailData.visit_time }}</el-descriptions-item>
+      <el-descriptions-item label="回访方式" :span="2">{{ detailData.visit_method }}</el-descriptions-item>
+      <el-descriptions-item label="回访结果" :span="2">{{ detailData.visit_result }}</el-descriptions-item>
+      <el-descriptions-item label="跟进人" :span="2">{{ detailData.follower }}</el-descriptions-item>
+      <el-descriptions-item label="状态" :span="2">
+        <el-tag v-if="detailData.status === 'pending'" type="warning">待处理</el-tag>
+        <el-tag v-else-if="detailData.status === 'completed'" type="success">已完成</el-tag>
+        <el-tag v-else-if="detailData.status === 'cancelled'" type="info">已取消</el-tag>
+        <span v-else>{{ detailData.status }}</span>
+      </el-descriptions-item>
+    </el-descriptions>
+    <div style="margin-top: 20px; text-align: center;">
+      <el-button type="primary" @click="handleEdit">编辑</el-button>
+      <el-button @click="handleBack">返回</el-button>
+    </div>
+  </div>
+</template>
+
+<script setup>
+import { ref, onMounted } from 'vue'
+import { ElMessage } from 'element-plus'
+import { getVisit } from './api'
+
+const props = defineProps({
+  id: {
+    type: Number,
+    required: true
+  }
+})
+
+const emit = defineEmits(['edit'])
+
+const detailData = ref(null)
+
+function loadDetail() {
+  getVisit(props.id).then(res => {
+    detailData.value = res.data
+  }).catch(() => {
+    ElMessage.error('加载详情失败')
+  })
+}
+
+function handleEdit() {
+  emit('edit', props.id)
+}
+
+function handleBack() {
+  // In a real scenario, this might navigate back, but for modal usage we emit a success event or close
+  // For simplicity, we just emit an event to parent
+  emit('edit', null)
+}
+
+onMounted(() => {
+  loadDetail()
+})
+</script>
+
+// ========== Statistics.vue ==========
+<template>
+  <div>
+    <el-table :data="statisticsData" border stripe v-loading="loading">
+      <el-table-column label="统计项" prop="label" min-width="120" />
+      <el-table-column label="数量" prop="value" min-width="100" />
+    </el-table>
+  </div>
+</template>
+
+<script setup>
+import { ref, onMounted } from 'vue'
+import { ElMessage } from 'element-plus'
+import { getVisitStatistics } from './api'
+
+const loading = ref(false)
+const statisticsData = ref([])
+
+function loadStatistics() {
+  loading.value = true
+  getVisitStatistics().then(res => {
+    // Assuming response format: { data: [ { label: '总回访数', value: 100 }, ... ] }
+    statisticsData.value = res.data || []
+  }).catch(() => {
+    ElMessage.error('加载统计失败')
+  }).finally(() => {
+    loading.value = false
+  })
+}
+
+onMounted(() => {
+  loadStatistics()
+})
+</script>

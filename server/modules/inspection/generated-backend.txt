@@ -1,0 +1,311 @@
+// ========== Entity ==========
+package com.example.bizagent.modules.inspection.entity;
+
+import com.baomidou.mybatisplus.annotation.IdType;
+import com.baomidou.mybatisplus.annotation.TableField;
+import com.baomidou.mybatisplus.annotation.TableId;
+import com.baomidou.mybatisplus.annotation.TableName;
+import lombok.Data;
+
+import java.time.LocalDateTime;
+
+@Data
+@TableName("biz_inspection_main")
+public class InspectionMain {
+
+    @TableId(value = "id", type = IdType.AUTO)
+    private Long id;
+
+    @TableField("device_name")
+    private String deviceName;
+
+    @TableField("device_location")
+    private String deviceLocation;
+
+    @TableField("plan_name")
+    private String planName;
+
+    @TableField("inspector")
+    private String inspector;
+
+    @TableField("inspection_time")
+    private String inspectionTime;
+
+    @TableField("status")
+    private String status;
+
+    @TableField("exception_desc")
+    private String exceptionDesc;
+
+    @TableField("rectification_status")
+    private String rectificationStatus;
+
+    @TableField("rectification_measure")
+    private String rectificationMeasure;
+
+    @TableField("rectification_person")
+    private String rectificationPerson;
+
+    @TableField("rectification_time")
+    private String rectificationTime;
+
+    @TableField("del_flag")
+    private Integer delFlag;
+
+    @TableField("project_id")
+    private Long projectId;
+
+    @TableField("create_time")
+    private LocalDateTime createTime;
+
+    @TableField("create_by")
+    private String createBy;
+
+    @TableField("update_time")
+    private LocalDateTime updateTime;
+
+    @TableField("update_by")
+    private String updateBy;
+}
+// ========== Mapper ==========
+package com.example.bizagent.modules.inspection.mapper;
+
+import com.baomidou.mybatisplus.core.mapper.BaseMapper;
+import com.example.bizagent.modules.inspection.entity.InspectionMain;
+import org.apache.ibatis.annotations.Mapper;
+import org.apache.ibatis.annotations.Param;
+import org.apache.ibatis.annotations.Select;
+
+import java.util.List;
+import java.util.Map;
+
+@Mapper
+public interface InspectionMainMapper extends BaseMapper<InspectionMain> {
+
+    @Select("SELECT " +
+            "COUNT(CASE WHEN status = 'pending' THEN 1 END) AS pendingCount, " +
+            "COUNT(CASE WHEN status = 'completed' THEN 1 END) AS completedCount, " +
+            "COUNT(CASE WHEN status = 'abnormal' THEN 1 END) AS abnormalCount, " +
+            "COUNT(CASE WHEN rectification_status = 'pending' THEN 1 END) AS rectificationPendingCount, " +
+            "COUNT(CASE WHEN rectification_status = 'rectified' THEN 1 END) AS rectificationCompletedCount " +
+            "FROM biz_inspection_main " +
+            "WHERE del_flag = 0 AND project_id = #{projectId} " +
+            "AND inspection_time >= #{startTime} AND inspection_time <= #{endTime}")
+    Map<String, Object> selectStatistics(@Param("projectId") Long projectId,
+                                         @Param("startTime") String startTime,
+                                         @Param("endTime") String endTime);
+}
+// ========== Service ==========
+package com.example.bizagent.modules.inspection.service;
+
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.example.bizagent.common.PageResponse;
+import com.example.bizagent.common.ResponseEntity;
+import com.example.bizagent.modules.inspection.entity.InspectionMain;
+import com.example.bizagent.modules.inspection.mapper.InspectionMainMapper;
+import org.apache.commons.lang3.StringUtils;
+import org.springframework.stereotype.Service;
+
+import java.time.LocalDateTime;
+import java.util.HashMap;
+import java.util.Map;
+
+@Service
+public class InspectionMainService extends ServiceImpl<InspectionMainMapper, InspectionMain> {
+
+    public PageResponse<InspectionMain> list(Long projectId, Integer pageNum, Integer pageSize,
+                                             String deviceName, String deviceLocation,
+                                             String inspector, String status,
+                                             String inspectionTime, String rectificationStatus) {
+        Page<InspectionMain> page = new Page<>(pageNum, pageSize);
+        LambdaQueryWrapper<InspectionMain> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(InspectionMain::getDelFlag, 0);
+        wrapper.eq(InspectionMain::getProjectId, projectId);
+        if (StringUtils.isNotBlank(deviceName)) {
+            wrapper.like(InspectionMain::getDeviceName, deviceName);
+        }
+        if (StringUtils.isNotBlank(deviceLocation)) {
+            wrapper.like(InspectionMain::getDeviceLocation, deviceLocation);
+        }
+        if (StringUtils.isNotBlank(inspector)) {
+            wrapper.like(InspectionMain::getInspector, inspector);
+        }
+        if (StringUtils.isNotBlank(status)) {
+            wrapper.eq(InspectionMain::getStatus, status);
+        }
+        if (StringUtils.isNotBlank(inspectionTime)) {
+            wrapper.eq(InspectionMain::getInspectionTime, inspectionTime);
+        }
+        if (StringUtils.isNotBlank(rectificationStatus)) {
+            wrapper.eq(InspectionMain::getRectificationStatus, rectificationStatus);
+        }
+        wrapper.orderByDesc(InspectionMain::getId);
+        IPage<InspectionMain> iPage = baseMapper.selectPage(page, wrapper);
+        return PageResponse.success(iPage.getRecords(), iPage.getTotal(), iPage.getCurrent(), iPage.getSize());
+    }
+
+    public ResponseEntity<InspectionMain> detail(Long id, Long projectId) {
+        InspectionMain entity = baseMapper.selectById(id);
+        if (entity == null || entity.getDelFlag() == 1 || !entity.getProjectId().equals(projectId)) {
+            return ResponseEntity.error("巡检记录不存在");
+        }
+        return ResponseEntity.success(entity);
+    }
+
+    public ResponseEntity<Long> create(InspectionMain entity) {
+        if (entity.getProjectId() == null) {
+            return ResponseEntity.error("项目ID不能为空");
+        }
+        if (StringUtils.isBlank(entity.getDeviceName())) {
+            return ResponseEntity.error("设备名称不能为空");
+        }
+        if (StringUtils.isBlank(entity.getDeviceLocation())) {
+            return ResponseEntity.error("设备位置不能为空");
+        }
+        if (StringUtils.isBlank(entity.getPlanName())) {
+            return ResponseEntity.error("巡检计划名称不能为空");
+        }
+        if (StringUtils.isBlank(entity.getInspector())) {
+            return ResponseEntity.error("巡检人不能为空");
+        }
+        if (StringUtils.isBlank(entity.getInspectionTime())) {
+            return ResponseEntity.error("巡检时间不能为空");
+        }
+        if (StringUtils.isBlank(entity.getStatus())) {
+            return ResponseEntity.error("状态不能为空");
+        }
+        entity.setDelFlag(0);
+        entity.setCreateTime(LocalDateTime.now());
+        entity.setUpdateTime(LocalDateTime.now());
+        baseMapper.insert(entity);
+        return ResponseEntity.success(entity.getId());
+    }
+
+    public ResponseEntity<Boolean> update(Long id, InspectionMain entity, Long projectId) {
+        InspectionMain existing = baseMapper.selectById(id);
+        if (existing == null || existing.getDelFlag() == 1 || !existing.getProjectId().equals(projectId)) {
+            return ResponseEntity.error("巡检记录不存在");
+        }
+        if (StringUtils.isBlank(entity.getDeviceName())) {
+            return ResponseEntity.error("设备名称不能为空");
+        }
+        if (StringUtils.isBlank(entity.getDeviceLocation())) {
+            return ResponseEntity.error("设备位置不能为空");
+        }
+        if (StringUtils.isBlank(entity.getPlanName())) {
+            return ResponseEntity.error("巡检计划名称不能为空");
+        }
+        if (StringUtils.isBlank(entity.getInspector())) {
+            return ResponseEntity.error("巡检人不能为空");
+        }
+        if (StringUtils.isBlank(entity.getInspectionTime())) {
+            return ResponseEntity.error("巡检时间不能为空");
+        }
+        if (StringUtils.isBlank(entity.getStatus())) {
+            return ResponseEntity.error("状态不能为空");
+        }
+        entity.setId(id);
+        entity.setProjectId(projectId);
+        entity.setUpdateTime(LocalDateTime.now());
+        boolean updated = baseMapper.updateById(entity) > 0;
+        return ResponseEntity.success(updated);
+    }
+
+    public ResponseEntity<Boolean> delete(Long id, Long projectId) {
+        InspectionMain existing = baseMapper.selectById(id);
+        if (existing == null || existing.getDelFlag() == 1 || !existing.getProjectId().equals(projectId)) {
+            return ResponseEntity.error("巡检记录不存在");
+        }
+        InspectionMain entity = new InspectionMain();
+        entity.setId(id);
+        entity.setDelFlag(1);
+        entity.setUpdateTime(LocalDateTime.now());
+        boolean deleted = baseMapper.updateById(entity) > 0;
+        return ResponseEntity.success(deleted);
+    }
+
+    public ResponseEntity<Map<String, Object>> statistics(Long projectId, String startTime, String endTime) {
+        if (projectId == null) {
+            return ResponseEntity.error("项目ID不能为空");
+        }
+        if (StringUtils.isBlank(startTime) || StringUtils.isBlank(endTime)) {
+            return ResponseEntity.error("开始时间和结束时间不能为空");
+        }
+        Map<String, Object> stats = baseMapper.selectStatistics(projectId, startTime, endTime);
+        if (stats == null) {
+            stats = new HashMap<>();
+            stats.put("pendingCount", 0);
+            stats.put("completedCount", 0);
+            stats.put("abnormalCount", 0);
+            stats.put("rectificationPendingCount", 0);
+            stats.put("rectificationCompletedCount", 0);
+        }
+        return ResponseEntity.success(stats);
+    }
+}
+// ========== Controller ==========
+package com.example.bizagent.modules.inspection.controller;
+
+import com.example.bizagent.common.PageResponse;
+import com.example.bizagent.common.ResponseEntity;
+import com.example.bizagent.modules.inspection.entity.InspectionMain;
+import com.example.bizagent.modules.inspection.service.InspectionMainService;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.Map;
+
+@RestController
+@RequestMapping("/api/biz/inspection")
+public class InspectionMainController {
+
+    @Autowired
+    private InspectionMainService inspectionMainService;
+
+    @GetMapping("/list")
+    public PageResponse<InspectionMain> list(@RequestParam("projectId") Long projectId,
+                                             @RequestParam(value = "pageNum", defaultValue = "1") Integer pageNum,
+                                             @RequestParam(value = "pageSize", defaultValue = "10") Integer pageSize,
+                                             @RequestParam(value = "deviceName", required = false) String deviceName,
+                                             @RequestParam(value = "deviceLocation", required = false) String deviceLocation,
+                                             @RequestParam(value = "inspector", required = false) String inspector,
+                                             @RequestParam(value = "status", required = false) String status,
+                                             @RequestParam(value = "inspectionTime", required = false) String inspectionTime,
+                                             @RequestParam(value = "rectificationStatus", required = false) String rectificationStatus) {
+        return inspectionMainService.list(projectId, pageNum, pageSize, deviceName, deviceLocation, inspector, status, inspectionTime, rectificationStatus);
+    }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<InspectionMain> detail(@PathVariable("id") Long id,
+                                                 @RequestParam("projectId") Long projectId) {
+        return inspectionMainService.detail(id, projectId);
+    }
+
+    @PostMapping
+    public ResponseEntity<Long> create(@RequestBody InspectionMain entity) {
+        return inspectionMainService.create(entity);
+    }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<Boolean> update(@PathVariable("id") Long id,
+                                          @RequestBody InspectionMain entity,
+                                          @RequestParam("projectId") Long projectId) {
+        return inspectionMainService.update(id, entity, projectId);
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Boolean> delete(@PathVariable("id") Long id,
+                                          @RequestParam("projectId") Long projectId) {
+        return inspectionMainService.delete(id, projectId);
+    }
+
+    @GetMapping("/statistics")
+    public ResponseEntity<Map<String, Object>> statistics(@RequestParam("projectId") Long projectId,
+                                                          @RequestParam("startTime") String startTime,
+                                                          @RequestParam("endTime") String endTime) {
+        return inspectionMainService.statistics(projectId, startTime, endTime);
+    }
+}
